@@ -1,0 +1,20 @@
+# Registers the bus fixtures, and exposes the buses, which nothing consumes yet and
+# would otherwise be removed from the compiled test container.
+services:
+    App\Tests\Shared\Infrastructure\Bus\Fixture\TestCommandHandler:
+        tags: [{ name: messenger.message_handler, bus: command.bus }]
+
+    App\Tests\Shared\Infrastructure\Bus\Fixture\TestQueryHandler:
+        tags: [{ name: messenger.message_handler, bus: query.bus }]
+
+    App\Shared\Application\Bus\Command\CommandBus:
+        alias: App\Shared\Infrastructure\Bus\MessengerCommandBus
+        public: true
+
+    App\Shared\Application\Bus\Query\QueryBus:
+        alias: App\Shared\Infrastructure\Bus\MessengerQueryBus
+        public: true
+
+    App\Shared\Application\Bus\Event\EventBus:
+        alias: App\Shared\Infrastructure\Bus\MessengerEventBus
+        public: true

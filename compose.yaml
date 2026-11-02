@@ -1,0 +1,104 @@
+---
+name: symfony-app
+
+x-app-environment: &app-environment
+  APP_ENV: ${APP_ENV:-dev}
+  # Picks up code edits from the mounted volume without restarting.
+  PHP_OPCACHE_VALIDATE_TIMESTAMPS: 1
+  MONGODB_URI: mongodb://${MONGODB_USERNAME:-app}:${MONGODB_PASSWORD:-app}@mongodb:27017
+
+services:
+  app:
+    image: jonsnmr/symfony-app:base
+    build:
+      context: docker/base
+      args:
+        APP_UID: ${APP_UID:-1000}
+        APP_GID: ${APP_GID:-1000}
+    environment: *app-environment
+    ports:
+      - "${APP_PORT:-8080}:8080"
+      - "${METRICS_PORT:-9253}:9253"
+    volumes:
+      - ./src:/code
+    networks:
+      - app-network
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "--output", "/dev/null", "http://127.0.0.1:8080/healthz"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+
+  # Consumes the asynchronous domain events from Redis.
+  worker:
+    image: jonsnmr/symfony-app:base
+    command: ["php", "bin/console", "messenger:consume", "async", "--time-limit=3600", "--memory-limit=128M"]
+    environment: *app-environment
+    restart: unless-stopped
+    volumes:
+      - ./src:/code
+    networks:
+      - app-network
+    depends_on:
+      app:
+        condition: service_started
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # One-off tooling, not started by "up": docker compose run --rm build composer install
+  build:
+    image: jonsnmr/symfony-app:build
+    build:
+      context: docker/build
+      additional_contexts:
+        jonsnmr/symfony-app:base: service:app
+    profiles: [tools]
+    environment: *app-environment
+    volumes:
+      - ./src:/code
+    networks:
+      - app-network
+
+  mongodb:
+    image: mongo:9.0
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGODB_USERNAME:-app}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGODB_PASSWORD:-app}
+    volumes:
+      - mongodb-data:/data/db
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  redis:
+    image: redis:8.0
+    volumes:
+      - redis-data:/data
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  mongodb-data:
+  redis-data:

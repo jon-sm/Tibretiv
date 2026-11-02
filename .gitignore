@@ -1,0 +1,10 @@
+specs.md
+
+# Local configuration and credentials. src/.env holds committed defaults and is kept.
+/.env
+/.env.*
+auth.json
+*.pem
+*.key
+*.p12
+*.pfx

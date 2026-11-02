@@ -1,0 +1,67 @@
+---
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request: ~
+  workflow_dispatch: ~
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    name: Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Match the container user to the checkout owner
+        run: |
+          echo "APP_UID=$(id -u)" >> "$GITHUB_ENV"
+          echo "APP_GID=$(id -g)" >> "$GITHUB_ENV"
+      - name: Build Docker images
+        run: docker compose --profile tools build
+      - name: Install dependencies
+        run: docker compose run --rm -T build composer install --no-interaction --no-progress
+      - name: Start services
+        run: docker compose up --wait
+      - name: Run PHPUnit
+        run: docker compose run --rm -T build vendor/bin/phpunit
+      - name: Run PHPStan
+        run: docker compose run --rm -T build vendor/bin/phpstan analyse --no-progress --memory-limit=1G
+      - name: Check architecture rules
+        run: docker compose run --rm -T build vendor/bin/deptrac analyse --no-progress
+      - name: Show logs on failure
+        if: failure()
+        run: docker compose logs
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+      statuses: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Lint Code Base
+        uses: super-linter/super-linter/slim@v9
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VALIDATE_CHECKOV: false
+          VALIDATE_TRIVY: false
+          VALIDATE_BIOME_FORMAT: false
+          VALIDATE_BIOME_LINT: false
+          VALIDATE_PYTHON_BLACK: false

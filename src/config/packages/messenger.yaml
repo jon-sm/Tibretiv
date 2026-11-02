@@ -1,0 +1,29 @@
+framework:
+    messenger:
+        default_bus: command.bus
+
+        buses:
+            command.bus: ~
+            query.bus: ~
+            event.bus:
+                # An event may have no subscribers yet.
+                default_middleware:
+                    enabled: true
+                    allow_no_handlers: true
+
+        failure_transport: failed
+
+        transports:
+            async: '%env(MESSENGER_TRANSPORT_DSN)%'
+            failed: '%env(MESSENGER_FAILURE_TRANSPORT_DSN)%'
+
+        # Commands and queries are not routed, so they run synchronously.
+        routing:
+            App\Shared\Domain\Event\DomainEvent: async
+
+when@test:
+    framework:
+        messenger:
+            transports:
+                async: 'in-memory://'
+                failed: 'in-memory://'
