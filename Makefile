@@ -33,8 +33,8 @@ build: ## Build the :base and :build images
 deps: ## Install the Composer dependencies
 	docker compose run --rm -T build composer install --no-interaction --no-progress
 
-up: ## Start the stack and wait until it is healthy
-	docker compose up -d --wait
+up: ## Start the stack in the foreground with its logs, Ctrl+C stops it
+	docker compose up
 
 down: ## Stop and remove the containers, keeping the data volumes
 	docker compose down

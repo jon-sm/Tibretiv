@@ -16,7 +16,8 @@ Skeleton for a Symfony project using hexagonal architecture, DDD and CQRS.
 make install
 ```
 
-This builds the images, installs the Composer dependencies and starts the stack. Each step is also
+This builds the images, installs the Composer dependencies and starts the stack in the foreground,
+showing its logs until you press Ctrl+C, which stops it. Each step is also
 available on its own as `make build`, `make deps` and `make up`. Stop the stack with `make down`.
 
 The app is served on <http://localhost:8080>. It returns a 404 until you add a first route.
