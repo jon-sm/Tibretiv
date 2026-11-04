@@ -53,6 +53,20 @@ services:
       redis:
         condition: service_healthy
 
+  # Rebuilds the Tailwind CSS whenever a template or stylesheet changes.
+  tailwind:
+    image: jonsnmr/symfony-app:base
+    command: ["php", "bin/console", "tailwind:build", "--watch"]
+    environment: *app-environment
+    # Tailwind's watcher exits when its stdin closes.
+    stdin_open: true
+    restart: unless-stopped
+    volumes:
+      - ./src:/code
+    depends_on:
+      app:
+        condition: service_started
+
   # One-off tooling, not started by "up": docker compose run --rm build composer install
   build:
     image: jonsnmr/symfony-app:build

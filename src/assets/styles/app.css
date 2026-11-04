@@ -1,0 +1,108 @@
+@import "tailwindcss";
+
+/*
+ * Inter, self-hosted (assets/fonts/inter, SIL Open Font License). Variable weight, so one file
+ * per subset covers every weight. The browser only downloads a subset if the page uses it.
+ * Source: @fontsource-variable/inter 5.2.8.
+ */
+@font-face {
+    font-family: "Inter Variable";
+    font-style: normal;
+    font-display: swap;
+    font-weight: 100 900;
+    src: url("../fonts/inter/inter-latin-ext-wght-normal.woff2") format("woff2-variations");
+    unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+    font-family: "Inter Variable";
+    font-style: normal;
+    font-display: swap;
+    font-weight: 100 900;
+    src: url("../fonts/inter/inter-latin-wght-normal.woff2") format("woff2-variations");
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/*
+ * Design tokens.
+ *
+ * Tailwind's default theme supplies the primitives: palette, type scale, spacing,
+ * radius, shadows. See https://tailwindcss.com/docs/theme.
+ *
+ * The semantic tokens below say what a colour is for. Templates use these
+ * (bg-surface, text-fg-muted, border-line, bg-accent...) rather than raw palette
+ * classes, so a re-brand only needs this block changed.
+ *
+ * Browse them all at /design-tokens.
+ */
+@theme {
+    /* Typography: Inter first, then Tailwind's default sans stack */
+    --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+
+    /* Surfaces */
+    --color-canvas: var(--color-slate-50);
+    --color-surface: var(--color-white);
+    --color-surface-muted: var(--color-slate-100);
+
+    /* Foreground (text, icons) */
+    --color-fg: var(--color-slate-900);
+    --color-fg-muted: var(--color-slate-600);
+    --color-fg-subtle: var(--color-slate-500);
+    --color-fg-on-accent: var(--color-white);
+
+    /* Borders */
+    --color-line: var(--color-slate-200);
+    --color-line-strong: var(--color-slate-300);
+
+    /* Accent: primary actions, links, focus */
+    --color-accent: var(--color-indigo-600);
+    --color-accent-hover: var(--color-indigo-700);
+    --color-accent-soft: var(--color-indigo-50);
+    --color-focus: var(--color-indigo-500);
+
+    /* Feedback: a strong tone for text and icons, a soft one for backgrounds */
+    --color-success: var(--color-green-700);
+    --color-success-soft: var(--color-green-50);
+    --color-warning: var(--color-amber-700);
+    --color-warning-soft: var(--color-amber-50);
+    --color-danger: var(--color-red-700);
+    --color-danger-soft: var(--color-red-50);
+    --color-info: var(--color-blue-700);
+    --color-info-soft: var(--color-blue-50);
+}
+
+/*
+ * Element defaults. Plain CSS on the token variables. Reusable UI lives in
+ * Twig components (templates/components/) as utilities, not as CSS classes.
+ */
+@layer base {
+    body {
+        background-color: var(--color-canvas);
+        color: var(--color-fg);
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+
+    a {
+        color: var(--color-accent);
+
+        &:hover {
+            color: var(--color-accent-hover);
+        }
+    }
+
+    :focus-visible {
+        outline: 2px solid var(--color-focus);
+        outline-offset: 2px;
+    }
+
+    /* The native date picker's calendar icon cannot be reached with utilities. */
+    input[type="date"]::-webkit-calendar-picker-indicator {
+        cursor: pointer;
+        opacity: 0.6;
+
+        &:hover {
+            opacity: 1;
+        }
+    }
+}

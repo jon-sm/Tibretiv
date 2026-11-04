@@ -1,0 +1,9 @@
+{#
+    <twig:Textarea name="cv" rows="12">{{ value }}</twig:Textarea>
+#}
+{% import 'components/_control.html.twig' as control %}
+{% props rows = 6 %}
+
+<textarea rows="{{ rows }}" {{ attributes.without('class') }} class="{{ control.classes() }} py-2 leading-relaxed {{ attributes.render('class') }}">
+    {%- block content %}{% endblock -%}
+</textarea>

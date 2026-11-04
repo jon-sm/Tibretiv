@@ -1,0 +1,7 @@
+{#
+    <twig:Input name="email" type="email" placeholder="you@example.com" />
+#}
+{% import 'components/_control.html.twig' as control %}
+{% props type = 'text' %}
+
+<input type="{{ type }}" {{ attributes.without('class') }} class="{{ control.classes() }} h-10 {{ attributes.render('class') }}">

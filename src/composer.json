@@ -8,6 +8,8 @@
         "ext-ctype": "*",
         "ext-iconv": "*",
         "doctrine/mongodb-odm-bundle": "^5.6",
+        "symfony/asset": "8.1.*",
+        "symfony/asset-mapper": "8.1.*",
         "symfony/console": "8.1.*",
         "symfony/dotenv": "8.1.*",
         "symfony/flex": "^2",
@@ -15,12 +17,19 @@
         "symfony/messenger": "8.1.*",
         "symfony/redis-messenger": "8.1.*",
         "symfony/runtime": "8.1.*",
-        "symfony/yaml": "8.1.*"
+        "symfony/twig-bundle": "8.1.*",
+        "symfony/ux-twig-component": "^3.7",
+        "symfony/yaml": "8.1.*",
+        "symfonycasts/tailwind-bundle": "^1.0",
+        "twig/extra-bundle": "^3.29",
+        "twig/html-extra": "^3.29"
     },
     "require-dev": {
         "deptrac/deptrac": "^4.7",
         "phpstan/phpstan": "^2.3",
-        "phpunit/phpunit": "^13.4"
+        "phpunit/phpunit": "^13.4",
+        "symfony/browser-kit": "8.1.*",
+        "symfony/css-selector": "8.1.*"
     },
     "config": {
         "allow-plugins": {
@@ -56,7 +65,8 @@
     "scripts": {
         "auto-scripts": {
             "cache:clear": "symfony-cmd",
-            "assets:install %PUBLIC_DIR%": "symfony-cmd"
+            "assets:install %PUBLIC_DIR%": "symfony-cmd",
+            "importmap:install": "symfony-cmd"
         },
         "post-install-cmd": [
             "@auto-scripts"

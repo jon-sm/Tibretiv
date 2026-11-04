@@ -1,0 +1,21 @@
+{#
+    Label, control, hint and error for one form field.
+
+    <twig:Field label="Email" for="email" hint="We'll only use it to contact you.">
+        <twig:Input id="email" name="email" type="email" />
+    </twig:Field>
+#}
+{% props label, for, hint = null, error = null, optional = false %}
+
+<div {{ attributes.defaults({class: 'grid gap-1.5'}) }}>
+    <label for="{{ for }}" class="text-sm font-medium text-fg">
+        {{ label }}
+        {% if optional %}<span class="font-normal text-fg-subtle">(optional)</span>{% endif %}
+    </label>
+    {% block content %}{% endblock %}
+    {% if error %}
+        <p class="text-sm text-danger">{{ error }}</p>
+    {% elseif hint %}
+        <p class="text-sm text-fg-subtle">{{ hint }}</p>
+    {% endif %}
+</div>

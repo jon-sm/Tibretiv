@@ -46,6 +46,7 @@ All services share `app-network`.
 | --- | --- |
 | `app` | Serves HTTP |
 | `worker` | Consumes domain events from Redis |
+| `tailwind` | Rebuilds the CSS when templates or stylesheets change |
 | `mongodb` | Database |
 | `redis` | Message transport |
 | `build` | One-off tooling, not started by `up` |
@@ -69,6 +70,19 @@ make deptrac -- --help
 
 The `--` is required, otherwise `make` reads the options itself. Use `ARGS` when an argument contains
 spaces or has the same name as a `make` target, for example `make test ARGS="--filter 'a b'"`.
+
+## Frontend
+
+Pages are server-rendered with Twig. Assets are served by AssetMapper, so there is no Node build.
+
+- **Tailwind CSS** (via `symfonycasts/tailwind-bundle`) builds `assets/styles/app.css`. The
+  `tailwind` service watches for changes, and `make deps` does a one-off build.
+- **Alpine.js** adds small interactive behaviour, and is loaded through the importmap.
+- **Design tokens**: Tailwind's default theme gives the primitives. The semantic tokens in
+  `assets/styles/app.css` (`bg-surface`, `text-fg-muted`, `bg-accent`...) are what templates use.
+  Browse them at <http://localhost:8080/design-tokens>.
+- **Components**: reusable UI is Twig Components in `templates/components/` (`<twig:Button>`,
+  `<twig:Input>`...), styled with utilities in their markup.
 
 ## Architecture
 

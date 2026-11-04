@@ -1,0 +1,13 @@
+{#
+    Shared look of every form control (Input, Select, Textarea, DatePicker).
+    Not a component: imported by them, so the classes live in one place.
+#}
+{% macro classes() -%}
+    {{- [
+        'block w-full rounded-md border border-line-strong bg-surface px-3 text-sm text-fg shadow-xs',
+        'transition-colors placeholder:text-fg-subtle hover:border-fg-subtle',
+        'focus:border-accent focus:outline-2 focus:-outline-offset-1 focus:outline-accent',
+        'aria-invalid:border-danger aria-invalid:focus:outline-danger',
+        'disabled:cursor-not-allowed disabled:bg-surface-muted disabled:text-fg-subtle',
+    ]|join(' ') -}}
+{%- endmacro %}

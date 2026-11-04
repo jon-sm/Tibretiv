@@ -1,0 +1,276 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Design tokens · ATS{% endblock %}
+
+{#
+    Classes are written out in full so Tailwind's scanner finds them.
+    Values are not repeated here: the $token Alpine magic (assets/app.js) reads them
+    from the CSS, so app.css and Tailwind's theme stay the single source of truth.
+#}
+{% set semantic = {
+    'Surfaces': [
+        {token: '--color-canvas', class: 'bg-canvas'},
+        {token: '--color-surface', class: 'bg-surface'},
+        {token: '--color-surface-muted', class: 'bg-surface-muted'},
+    ],
+    'Foreground': [
+        {token: '--color-fg', class: 'bg-fg'},
+        {token: '--color-fg-muted', class: 'bg-fg-muted'},
+        {token: '--color-fg-subtle', class: 'bg-fg-subtle'},
+        {token: '--color-fg-on-accent', class: 'bg-fg-on-accent'},
+    ],
+    'Borders': [
+        {token: '--color-line', class: 'bg-line'},
+        {token: '--color-line-strong', class: 'bg-line-strong'},
+    ],
+    'Accent': [
+        {token: '--color-accent', class: 'bg-accent'},
+        {token: '--color-accent-hover', class: 'bg-accent-hover'},
+        {token: '--color-accent-soft', class: 'bg-accent-soft'},
+        {token: '--color-focus', class: 'bg-focus'},
+    ],
+    'Feedback': [
+        {token: '--color-success', class: 'bg-success'},
+        {token: '--color-success-soft', class: 'bg-success-soft'},
+        {token: '--color-warning', class: 'bg-warning'},
+        {token: '--color-warning-soft', class: 'bg-warning-soft'},
+        {token: '--color-danger', class: 'bg-danger'},
+        {token: '--color-danger-soft', class: 'bg-danger-soft'},
+        {token: '--color-info', class: 'bg-info'},
+        {token: '--color-info-soft', class: 'bg-info-soft'},
+    ],
+} %}
+{% set palette = {
+    'slate': ['bg-slate-50', 'bg-slate-100', 'bg-slate-200', 'bg-slate-300', 'bg-slate-400', 'bg-slate-500', 'bg-slate-600', 'bg-slate-700', 'bg-slate-800', 'bg-slate-900', 'bg-slate-950'],
+    'indigo': ['bg-indigo-50', 'bg-indigo-100', 'bg-indigo-200', 'bg-indigo-300', 'bg-indigo-400', 'bg-indigo-500', 'bg-indigo-600', 'bg-indigo-700', 'bg-indigo-800', 'bg-indigo-900', 'bg-indigo-950'],
+    'green': ['bg-green-50', 'bg-green-100', 'bg-green-200', 'bg-green-300', 'bg-green-400', 'bg-green-500', 'bg-green-600', 'bg-green-700', 'bg-green-800', 'bg-green-900', 'bg-green-950'],
+    'amber': ['bg-amber-50', 'bg-amber-100', 'bg-amber-200', 'bg-amber-300', 'bg-amber-400', 'bg-amber-500', 'bg-amber-600', 'bg-amber-700', 'bg-amber-800', 'bg-amber-900', 'bg-amber-950'],
+    'red': ['bg-red-50', 'bg-red-100', 'bg-red-200', 'bg-red-300', 'bg-red-400', 'bg-red-500', 'bg-red-600', 'bg-red-700', 'bg-red-800', 'bg-red-900', 'bg-red-950'],
+    'blue': ['bg-blue-50', 'bg-blue-100', 'bg-blue-200', 'bg-blue-300', 'bg-blue-400', 'bg-blue-500', 'bg-blue-600', 'bg-blue-700', 'bg-blue-800', 'bg-blue-900', 'bg-blue-950'],
+} %}
+{% set font_sizes = [
+    {token: '--text-4xl', class: 'text-4xl'},
+    {token: '--text-3xl', class: 'text-3xl'},
+    {token: '--text-2xl', class: 'text-2xl'},
+    {token: '--text-xl', class: 'text-xl'},
+    {token: '--text-lg', class: 'text-lg'},
+    {token: '--text-base', class: 'text-base'},
+    {token: '--text-sm', class: 'text-sm'},
+    {token: '--text-xs', class: 'text-xs'},
+] %}
+{% set font_weights = [
+    {token: '--font-weight-normal', class: 'font-normal'},
+    {token: '--font-weight-medium', class: 'font-medium'},
+    {token: '--font-weight-semibold', class: 'font-semibold'},
+    {token: '--font-weight-bold', class: 'font-bold'},
+] %}
+{% set spacing = [
+    {name: '1', class: 'w-1'},
+    {name: '2', class: 'w-2'},
+    {name: '3', class: 'w-3'},
+    {name: '4', class: 'w-4'},
+    {name: '6', class: 'w-6'},
+    {name: '8', class: 'w-8'},
+    {name: '12', class: 'w-12'},
+    {name: '16', class: 'w-16'},
+] %}
+{% set radii = [
+    {token: '--radius-sm', class: 'rounded-sm'},
+    {token: '--radius-md', class: 'rounded-md'},
+    {token: '--radius-lg', class: 'rounded-lg'},
+    {token: '--radius-xl', class: 'rounded-xl'},
+    {token: null, class: 'rounded-full'},
+] %}
+{% set shadows = ['shadow-xs', 'shadow-sm', 'shadow-md', 'shadow-lg'] %}
+
+{% macro value(token) %}
+    <code class="text-xs text-fg-subtle" x-data x-text="$token('{{ token }}').value"></code>
+{% endmacro %}
+
+{% macro section(id, title) %}
+    <h2 id="{{ id }}" class="mb-4 text-xl font-semibold">{{ title }}</h2>
+{% endmacro %}
+
+{% macro group(title) %}
+    <h3 class="mt-6 mb-3 text-xs font-semibold tracking-wider text-fg-muted uppercase">{{ title }}</h3>
+{% endmacro %}
+
+{% block body %}
+<main class="mx-auto max-w-6xl space-y-8 px-4 py-8">
+    <header class="mb-12">
+        <h1 class="mb-3 text-3xl font-semibold">Design tokens</h1>
+        <p class="max-w-2xl text-lg text-fg-muted">
+            Primitives come from Tailwind's default theme. The semantic tokens, defined in
+            <code class="text-base">assets/styles/app.css</code>, say what each colour is for.
+            Templates use the semantic ones.
+        </p>
+    </header>
+
+    <section aria-labelledby="dt-semantic" class="rounded-xl border border-line bg-surface p-6">
+        {{ _self.section('dt-semantic', 'Color: semantic') }}
+        {% for title, tokens in semantic %}
+            {{ _self.group(title) }}
+            <ul class="grid grid-cols-[repeat(auto-fill,minmax(12rem,1fr))] gap-4">
+                {% for t in tokens %}
+                    <li class="grid gap-1" x-data="{ t: $token('{{ t.token }}') }">
+                        <span class="h-16 rounded-md border border-line {{ t.class }}"></span>
+                        <code class="text-sm">{{ t.class }}</code>
+                        <code class="text-xs text-fg-subtle" x-text="t.ref ? t.ref.replace('--color-', '→ ') : t.value"></code>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% endfor %}
+    </section>
+
+    <section aria-labelledby="dt-palette" class="rounded-xl border border-line bg-surface p-6">
+        {{ _self.section('dt-palette', 'Color: palette in use') }}
+        <p class="text-sm text-fg-muted">
+            The Tailwind hues the semantic tokens draw from. The full palette is available, but prefer a semantic token.
+        </p>
+        {% for hue, classes in palette %}
+            {{ _self.group(hue) }}
+            <ul class="grid grid-cols-[repeat(auto-fill,minmax(5rem,1fr))] gap-2">
+                {% for class in classes %}
+                    <li class="grid gap-1">
+                        <span class="h-12 rounded-sm border border-line {{ class }}"></span>
+                        <code class="text-xs">{{ class|split('-')|last }}</code>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% endfor %}
+    </section>
+
+    <section aria-labelledby="dt-type" class="rounded-xl border border-line bg-surface p-6">
+        {{ _self.section('dt-type', 'Typography') }}
+
+        {{ _self.group('Families') }}
+        <dl class="divide-y divide-line">
+            <div class="grid gap-4 py-3 sm:grid-cols-[14rem_1fr] sm:items-center">
+                <dt><code class="text-sm">font-sans</code></dt>
+                <dd class="font-sans">Candidate applied for Senior Backend Engineer</dd>
+            </div>
+            <div class="grid gap-4 py-3 sm:grid-cols-[14rem_1fr] sm:items-center">
+                <dt><code class="text-sm">font-mono</code></dt>
+                <dd class="font-mono">appliedAt 2026-11-04T09:30:00Z</dd>
+            </div>
+        </dl>
+
+        {{ _self.group('Sizes') }}
+        <dl class="divide-y divide-line">
+            {% for s in font_sizes %}
+                <div class="grid gap-4 py-3 sm:grid-cols-[14rem_1fr] sm:items-center">
+                    <dt class="flex items-baseline gap-2"><code class="text-sm">{{ s.class }}</code> {{ _self.value(s.token) }}</dt>
+                    <dd class="{{ s.class }}">The quick brown fox</dd>
+                </div>
+            {% endfor %}
+        </dl>
+
+        {{ _self.group('Weights') }}
+        <dl class="divide-y divide-line">
+            {% for w in font_weights %}
+                <div class="grid gap-4 py-3 sm:grid-cols-[14rem_1fr] sm:items-center">
+                    <dt class="flex items-baseline gap-2"><code class="text-sm">{{ w.class }}</code> {{ _self.value(w.token) }}</dt>
+                    <dd class="{{ w.class }}">The quick brown fox</dd>
+                </div>
+            {% endfor %}
+        </dl>
+    </section>
+
+    <section aria-labelledby="dt-space" class="rounded-xl border border-line bg-surface p-6">
+        {{ _self.section('dt-space', 'Spacing') }}
+        <p class="text-sm text-fg-muted">
+            One base unit, <code>--spacing</code> = <span x-data x-text="$token('--spacing').value"></span>.
+            Every spacing utility is a multiple: <code>p-4</code> is 4 × the base.
+        </p>
+        <dl class="divide-y divide-line">
+            {% for s in spacing %}
+                <div class="grid gap-4 py-3 sm:grid-cols-[14rem_1fr] sm:items-center">
+                    <dt><code class="text-sm">{{ s.name }}</code></dt>
+                    <dd><span class="block h-4 rounded-sm bg-accent {{ s.class }}"></span></dd>
+                </div>
+            {% endfor %}
+        </dl>
+    </section>
+
+    <section aria-labelledby="dt-radius" class="rounded-xl border border-line bg-surface p-6">
+        {{ _self.section('dt-radius', 'Radius') }}
+        <div class="grid grid-cols-[repeat(auto-fill,minmax(10rem,1fr))] gap-5">
+            {% for r in radii %}
+                <figure class="grid gap-3">
+                    <span class="block size-20 border-2 border-accent bg-accent-soft {{ r.class }}"></span>
+                    <figcaption class="flex flex-wrap items-baseline gap-2">
+                        <code class="text-sm">{{ r.class }}</code>
+                        {% if r.token %}{{ _self.value(r.token) }}{% endif %}
+                    </figcaption>
+                </figure>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section aria-labelledby="dt-shadow" class="rounded-xl border border-line bg-surface p-6">
+        {{ _self.section('dt-shadow', 'Elevation') }}
+        <div class="grid grid-cols-[repeat(auto-fill,minmax(12rem,1fr))] gap-6">
+            {% for shadow in shadows %}
+                <figure class="flex min-h-24 items-end rounded-md bg-surface p-4 {{ shadow }}">
+                    <figcaption><code class="text-sm">{{ shadow }}</code></figcaption>
+                </figure>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section aria-labelledby="dt-components" class="rounded-xl border border-line bg-surface p-6">
+        {{ _self.section('dt-components', 'Components') }}
+        <p class="text-sm text-fg-muted">
+            Twig components in <code>templates/components/</code>, built from the tokens above.
+            What you see here is what the pages render.
+        </p>
+
+        {{ _self.group('Button') }}
+        <div class="flex flex-wrap items-end gap-6">
+            {% for size in ['sm', 'md', 'lg'] %}
+                <figure class="grid justify-items-start gap-2">
+                    <twig:Button size="{{ size }}">Send application</twig:Button>
+                    <figcaption><code class="text-xs text-fg-subtle">&lt;twig:Button size="{{ size }}"&gt;</code></figcaption>
+                </figure>
+            {% endfor %}
+            <figure class="grid justify-items-start gap-2">
+                <twig:Button disabled>Send application</twig:Button>
+                <figcaption><code class="text-xs text-fg-subtle">disabled</code></figcaption>
+            </figure>
+        </div>
+
+        {{ _self.group('Form controls') }}
+        <div class="grid max-w-xl gap-5">
+            <twig:Field label="Email" for="dt-input" hint="Input. We'll only use it to contact you.">
+                <twig:Input id="dt-input" type="email" placeholder="jane@example.com" />
+            </twig:Field>
+
+            <twig:Field label="Email" for="dt-input-error" error="Enter a valid email address.">
+                <twig:Input id="dt-input-error" type="email" value="jane@" aria-invalid="true" />
+            </twig:Field>
+
+            <twig:Field label="Status" for="dt-select" hint="Select.">
+                <twig:Select id="dt-select">
+                    <option value="">All statuses</option>
+                    <option value="received">Received</option>
+                    <option value="contacted">Contacted</option>
+                    <option value="rejected">Rejected</option>
+                    <option value="hired">Hired</option>
+                </twig:Select>
+            </twig:Field>
+
+            <twig:Field label="Applied from" for="dt-date" hint="DatePicker: the browser's native picker.">
+                <twig:DatePicker id="dt-date" />
+            </twig:Field>
+
+            <twig:Field label="CV" for="dt-textarea" hint="Textarea. Paste your CV as plain text.">
+                <twig:Textarea id="dt-textarea" rows="6" placeholder="Experience, skills, education…" />
+            </twig:Field>
+
+            <twig:Field label="Notes" for="dt-disabled" optional>
+                <twig:Input id="dt-disabled" placeholder="Disabled" disabled />
+            </twig:Field>
+        </div>
+    </section>
+</main>
+{% endblock %}

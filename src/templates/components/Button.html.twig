@@ -1,0 +1,21 @@
+{#
+    <twig:Button size="lg" type="submit">Send application</twig:Button>
+
+    size: sm | md | lg (md matches the height of form controls)
+#}
+{% props size = 'md', type = 'button' %}
+
+{% set button = html_cva(
+    base: 'inline-flex items-center justify-center gap-2 rounded-md bg-accent font-medium text-fg-on-accent shadow-xs transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-accent',
+    variants: {
+        size: {
+            sm: 'h-8 px-3 text-sm',
+            md: 'h-10 px-4 text-sm',
+            lg: 'h-12 px-6 text-base',
+        },
+    },
+) %}
+
+<button type="{{ type }}" {{ attributes.without('class') }} class="{{ button.apply({size: size}, attributes.render('class')) }}">
+    {%- block content %}{% endblock -%}
+</button>

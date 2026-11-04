@@ -1,0 +1,16 @@
+{#
+    <twig:Select name="status">
+        <option value="">All statuses</option>
+        <option value="received">Received</option>
+    </twig:Select>
+#}
+{% import 'components/_control.html.twig' as control %}
+
+<div class="relative">
+    <select {{ attributes.without('class') }} class="{{ control.classes() }} h-10 appearance-none pr-10 {{ attributes.render('class') }}">
+        {%- block content %}{% endblock -%}
+    </select>
+    <svg class="pointer-events-none absolute top-1/2 right-3 size-5 -translate-y-1/2 text-fg-subtle" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+        <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.06l3.71-3.83a.75.75 0 1 1 1.08 1.04l-4.25 4.39a.75.75 0 0 1-1.08 0L5.21 8.27a.75.75 0 0 1 .02-1.06Z" clip-rule="evenodd"/>
+    </svg>
+</div>

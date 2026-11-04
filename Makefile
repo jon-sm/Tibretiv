@@ -30,8 +30,9 @@ install: build deps up ## Build the images, install dependencies and start the s
 build: ## Build the :base and :build images
 	docker compose --profile tools build
 
-deps: ## Install the Composer dependencies
+deps: ## Install the Composer dependencies and build the CSS
 	docker compose run --rm -T build composer install --no-interaction --no-progress
+	docker compose run --rm -T build bin/console tailwind:build
 
 up: ## Start the stack in the foreground with its logs, Ctrl+C stops it
 	docker compose up
