@@ -1,0 +1,46 @@
+{% extends 'mockups/_public.html.twig' %}
+
+{% block page_title %}Open positions{% endblock %}
+
+{# Fake data: replaced by the "list open positions" query when wired. #}
+{% set positions = state == 'empty' ? [] : [
+    {title: 'Senior Backend Engineer', workMode: 'Hybrid', location: 'Madrid', description: 'We are looking for an engineer to own our event-driven backend: the services that receive applications, enrich them with AI and keep recruiters up to date in real time.'},
+    {title: 'Product Designer', workMode: 'Remote', location: 'Spain', description: 'Shape how recruiters and candidates experience hiring, from the first application to the final offer. You will own the design system and work closely with engineering.'},
+    {title: 'Data Engineer', workMode: 'On-site', location: 'Barcelona', description: 'Build the pipelines that power our matching and reporting. Batch and streaming, MongoDB and a warehouse, with a strong focus on data quality.'},
+    {title: 'Frontend Engineer', workMode: 'Hybrid', location: 'Valencia', description: 'Build fast, accessible interfaces with server-rendered pages and just enough JavaScript. You care about details, performance and the people using what you build.'},
+] %}
+
+{% block content %}
+    <header class="mb-10">
+        <h1 class="text-3xl font-semibold tracking-tight sm:text-4xl">Open positions</h1>
+        <p class="mt-3 text-lg text-fg-muted">Join the team. Pick a role and apply in two minutes.</p>
+    </header>
+
+    {% if positions is empty %}
+        <div class="rounded-xl border border-dashed border-line-strong bg-surface px-6 py-16 text-center">
+            <p class="font-medium">No open positions right now.</p>
+            <p class="mt-1 text-sm text-fg-muted">Check back soon.</p>
+        </div>
+    {% else %}
+        <ul class="grid gap-4">
+            {% for position in positions %}
+                <li>
+                    <a href="{{ path('mockup', {page: 'apply'}) }}"
+                       class="group block rounded-xl border border-line bg-surface p-6 text-fg no-underline shadow-xs transition hover:border-accent/40 hover:text-fg hover:shadow-md">
+                        <div class="flex items-start justify-between gap-4">
+                            <div class="min-w-0">
+                                <h2 class="text-lg font-semibold group-hover:text-accent">{{ position.title }}</h2>
+                                <p class="mt-1 text-sm text-fg-muted">{{ position.workMode }} · {{ position.location }}</p>
+                            </div>
+                            <span class="hidden shrink-0 items-center gap-1 text-sm font-medium text-accent sm:inline-flex">
+                                Apply
+                                <span aria-hidden="true" class="transition group-hover:translate-x-0.5">→</span>
+                            </span>
+                        </div>
+                        <p class="mt-3 line-clamp-2 text-fg-muted">{{ position.description }}</p>
+                    </a>
+                </li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+{% endblock %}

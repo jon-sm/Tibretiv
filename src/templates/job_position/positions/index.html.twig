@@ -1,0 +1,42 @@
+{#
+    Index: open positions. Variables: see JobPositionsController.
+    Design: templates/mockups/positions.html.twig.
+#}
+{% extends 'layouts/public.html.twig' %}
+
+{% block page_title %}Open positions{% endblock %}
+
+{% block content %}
+    <header class="mb-10">
+        <h1 class="text-3xl font-semibold tracking-tight sm:text-4xl">Open positions</h1>
+        <p class="mt-3 text-lg text-fg-muted">Join the team. Pick a role and apply in two minutes.</p>
+    </header>
+
+    {% if positions is empty %}
+        <div class="rounded-xl border border-dashed border-line-strong bg-surface px-6 py-16 text-center">
+            <p class="font-medium">No open positions right now.</p>
+            <p class="mt-1 text-sm text-fg-muted">Check back soon.</p>
+        </div>
+    {% else %}
+        <ul class="grid gap-4">
+            {% for position in positions %}
+                <li data-position="{{ position.id }}">
+                    <a href="{{ path('position_apply', {id: position.id}) }}"
+                       class="group block rounded-xl border border-line bg-surface p-6 text-fg no-underline shadow-xs transition hover:border-accent/40 hover:text-fg hover:shadow-md">
+                        <div class="flex items-start justify-between gap-4">
+                            <div class="min-w-0">
+                                <h2 class="text-lg font-semibold group-hover:text-accent">{{ position.title }}</h2>
+                                <twig:JobPositionMeta :position="position" class="mt-1 block text-sm text-fg-muted" />
+                            </div>
+                            <span class="hidden shrink-0 items-center gap-1 text-sm font-medium text-accent sm:inline-flex">
+                                Apply
+                                <span aria-hidden="true" class="transition group-hover:translate-x-0.5">→</span>
+                            </span>
+                        </div>
+                        <p class="mt-3 line-clamp-2 text-fg-muted">{{ position.description }}</p>
+                    </a>
+                </li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+{% endblock %}

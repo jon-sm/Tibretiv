@@ -1,0 +1,86 @@
+{#
+    Form theme: renders Symfony Form fields with the design system, so form_row() gives the same
+    result as the Field + Input/Select/Textarea components.
+
+    Row options (pass to form_row):
+    - optional: true   adds "(optional)" to the label
+    - help: '…'        hint under the control, hidden while the field has errors
+#}
+{% use 'form_div_layout.html.twig' %}
+
+{# Row: label, control, then errors or hint #}
+{%- block form_row -%}
+    <div class="grid content-start gap-1.5">
+        {{- form_label(form) -}}
+        {{- form_widget(form) -}}
+        {%- if errors|length > 0 -%}
+            {{- form_errors(form) -}}
+        {%- else -%}
+            {{- form_help(form) -}}
+        {%- endif -%}
+    </div>
+{%- endblock form_row -%}
+
+{%- block form_label -%}
+    {%- if label is not same as(false) -%}
+        {%- if label is empty -%}{%- set label = name|humanize -%}{%- endif -%}
+        <label for="{{ id }}" class="{{ ('text-sm font-medium text-fg ' ~ label_attr.class|default(''))|trim }}">
+            {{- translation_domain is same as(false) ? label : label|trans(label_translation_parameters, translation_domain) -}}
+            {%- if optional|default(false) %} <span class="font-normal text-fg-subtle">(optional)</span>{% endif -%}
+        </label>
+    {%- endif -%}
+{%- endblock form_label -%}
+
+{%- block form_help -%}
+    {%- if help is not empty -%}
+        <p id="{{ id }}_help" class="text-sm text-fg-subtle">{{ help }}</p>
+    {%- endif -%}
+{%- endblock form_help -%}
+
+{# Field errors under the control; errors on the whole form as an alert #}
+{%- block form_errors -%}
+    {%- if errors|length > 0 -%}
+        {%- if compound and form.parent is null -%}
+            <twig:Alert tone="danger" title="{{ errors|first.message }}">
+                {%- for error in errors|slice(1) %}<p>{{ error.message }}</p>{% endfor -%}
+            </twig:Alert>
+        {%- else -%}
+            {%- for error in errors -%}
+                <p id="{{ id }}_error" class="text-sm text-danger">{{ error.message }}</p>
+            {%- endfor -%}
+        {%- endif -%}
+    {%- endif -%}
+{%- endblock form_errors -%}
+
+{# Controls: input, textarea, select, all sharing the control look #}
+{%- block form_widget_simple -%}
+    {%- import 'components/_control.html.twig' as control -%}
+    {# Hidden inputs (e.g. the CSRF _token) stay plain #}
+    {%- if type|default('text') != 'hidden' -%}
+        {%- set attr = attr|merge({
+            class: (control.classes() ~ ' h-10 ' ~ attr.class|default(''))|trim,
+        }|merge(errors|length > 0 ? {'aria-invalid': 'true', 'aria-describedby': id ~ '_error'} : {})) -%}
+    {%- endif -%}
+    {{- parent() -}}
+{%- endblock form_widget_simple -%}
+
+{%- block textarea_widget -%}
+    {%- import 'components/_control.html.twig' as control -%}
+    {%- set attr = attr|merge({
+        class: (control.classes() ~ ' py-2 leading-relaxed ' ~ attr.class|default(''))|trim,
+    }|merge(errors|length > 0 ? {'aria-invalid': 'true', 'aria-describedby': id ~ '_error'} : {})) -%}
+    {{- parent() -}}
+{%- endblock textarea_widget -%}
+
+{%- block choice_widget_collapsed -%}
+    {%- import 'components/_control.html.twig' as control -%}
+    {%- set attr = attr|merge({
+        class: (control.classes() ~ ' h-10 appearance-none pr-10 ' ~ attr.class|default(''))|trim,
+    }|merge(errors|length > 0 ? {'aria-invalid': 'true', 'aria-describedby': id ~ '_error'} : {})) -%}
+    <div class="relative">
+        {{- parent() -}}
+        <svg class="pointer-events-none absolute top-1/2 right-3 size-5 -translate-y-1/2 text-fg-subtle" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.06l3.71-3.83a.75.75 0 1 1 1.08 1.04l-4.25 4.39a.75.75 0 0 1-1.08 0L5.21 8.27a.75.75 0 0 1 .02-1.06Z" clip-rule="evenodd"/>
+        </svg>
+    </div>
+{%- endblock choice_widget_collapsed -%}

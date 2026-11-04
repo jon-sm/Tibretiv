@@ -1,5 +1,7 @@
 twig:
     file_name_pattern: '*.twig'
+    # Renders Symfony Form fields with the design system
+    form_themes: ['form/theme.html.twig']
 
 when@test:
     twig:

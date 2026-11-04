@@ -1,0 +1,8 @@
+{% extends 'layouts/public.html.twig' %}
+
+{% set home_href = path('mockup', {page: 'positions'}) %}
+
+{% block body %}
+    {{ parent() }}
+    {{ include('mockups/_switcher.html.twig') }}
+{% endblock %}

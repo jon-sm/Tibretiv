@@ -86,6 +86,9 @@ services:
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGODB_USERNAME:-app}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGODB_PASSWORD:-app}
+    # For local tools (mongosh, Compass). Bound to localhost only.
+    ports:
+      - "127.0.0.1:${MONGODB_PORT:-27017}:27017"
     volumes:
       - mongodb-data:/data/db
     networks:

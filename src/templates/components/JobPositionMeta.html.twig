@@ -1,0 +1,12 @@
+{#
+    "Hybrid · Madrid": a position's work mode and location.
+
+    <twig:JobPositionMeta :position="position" />
+
+    position: anything with workMode (remote | hybrid | onsite) and location.
+#}
+{% props position %}
+
+{% set work_modes = {remote: 'Remote', hybrid: 'Hybrid', onsite: 'On-site'} %}
+
+<span {{ attributes }}>{{ work_modes[position.workMode] ?? position.workMode|capitalize }} · {{ position.location }}</span>

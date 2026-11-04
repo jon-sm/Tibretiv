@@ -1,0 +1,24 @@
+{#
+    <twig:Badge tone="success">Hired</twig:Badge>
+
+    tone: neutral | info | success | warning | danger | accent
+#}
+{% props tone = 'neutral' %}
+
+{% set badge = html_cva(
+    base: 'inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium whitespace-nowrap ring-1 ring-inset',
+    variants: {
+        tone: {
+            neutral: 'bg-surface-muted text-fg-muted ring-line-strong',
+            info: 'bg-info-soft text-info ring-info/20',
+            success: 'bg-success-soft text-success ring-success/20',
+            warning: 'bg-warning-soft text-warning ring-warning/25',
+            danger: 'bg-danger-soft text-danger ring-danger/20',
+            accent: 'bg-accent-soft text-accent ring-accent/20',
+        },
+    },
+) %}
+
+<span {{ attributes.without('class') }} class="{{ badge.apply({tone: tone}, attributes.render('class')) }}">
+    {%- block content %}{% endblock -%}
+</span>

@@ -7,7 +7,7 @@
 #}
 {% props label, for, hint = null, error = null, optional = false %}
 
-<div {{ attributes.defaults({class: 'grid gap-1.5'}) }}>
+<div {{ attributes.defaults({class: 'grid content-start gap-1.5'}) }}>
     <label for="{{ for }}" class="text-sm font-medium text-fg">
         {{ label }}
         {% if optional %}<span class="font-normal text-fg-subtle">(optional)</span>{% endif %}

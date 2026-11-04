@@ -1,0 +1,128 @@
+{% extends 'mockups/_public.html.twig' %}
+
+{% block page_title %}Senior Backend Engineer{% endblock %}
+
+{# Fake data: replaced by the "get position" query and the submitted form when wired. #}
+{% set position = {
+    title: 'Senior Backend Engineer',
+    workMode: 'Hybrid',
+    location: 'Madrid',
+    open: state != 'closed',
+    description: "We are looking for an engineer to own our event-driven backend: the services that receive applications, enrich them with AI and keep recruiters up to date in real time.
+
+What you will do
+- Design and build services in PHP and Symfony, following DDD and hexagonal architecture.
+- Own asynchronous flows: messaging, retries and failure handling.
+- Model data in MongoDB and keep queries fast as we grow.
+- Review code, mentor engineers and help shape our technical direction.
+
+What we are looking for
+- 5+ years building backend systems in production.
+- Solid experience with message queues and event-driven design.
+- Comfortable with testing at every level: unit, integration and end to end.
+- Clear written communication. We work async across two offices.
+
+Nice to have
+- Experience with LLM-based features.
+- Kubernetes or another container platform.
+
+We offer a hybrid setup with two office days a week in Madrid, a learning budget and 25 days of holiday.",
+} %}
+
+{% set filled = state in ['errors', 'duplicate', 'submitting'] %}
+{% set values = filled ? {
+    name: 'Jane', surname: 'Doe',
+    email: state == 'errors' ? 'jane.doe@' : 'jane.doe@gmail.com',
+    phone: state == 'errors' ? '' : '+34 600 000 000',
+    cv: "Jane Doe\nBackend engineer · Madrid\n\nExperience\n2019–now  Senior Backend Engineer, Acme\n- Led the move to event-driven services (Symfony Messenger, RabbitMQ).\n…",
+    notes: 'Available from January.',
+} : {name: '', surname: '', email: '', phone: '', cv: '', notes: ''} %}
+{% set errors = state == 'errors' ? {
+    email: 'Enter a valid email address.',
+    phone: 'Enter a phone number.',
+} : {} %}
+
+{% block content %}
+    <a href="{{ path('mockup', {page: 'positions'}) }}" class="inline-flex items-center gap-1 text-sm font-medium no-underline">
+        <span aria-hidden="true">←</span> All positions
+    </a>
+
+    <header class="mt-6 mb-10">
+        <h1 class="text-3xl font-semibold tracking-tight sm:text-4xl">{{ position.title }}</h1>
+        <p class="mt-2 text-lg text-fg-muted">{{ position.workMode }} · {{ position.location }}</p>
+        {% if position.open %}
+            {# Mobile: the form sits below a long description #}
+            <a href="#apply" class="mt-5 inline-flex h-10 items-center gap-2 rounded-md bg-accent px-4 text-sm font-medium text-fg-on-accent no-underline shadow-xs hover:bg-accent-hover hover:text-fg-on-accent lg:hidden">
+                Apply now <span aria-hidden="true">↓</span>
+            </a>
+        {% endif %}
+    </header>
+
+    <div class="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_26rem]">
+        <section aria-labelledby="about" class="rounded-xl border border-line bg-surface p-6 sm:p-8">
+            <h2 id="about" class="mb-4 text-lg font-semibold">About the role</h2>
+            <div class="leading-relaxed whitespace-pre-line text-fg-muted">{{ position.description }}</div>
+        </section>
+
+        {% if position.open %}
+            <section aria-labelledby="apply-title" id="apply" class="scroll-mt-6 rounded-xl border border-line bg-surface p-6 shadow-sm lg:sticky lg:top-6">
+                <h2 id="apply-title" class="mb-1 text-lg font-semibold">Apply</h2>
+                <p class="mb-6 text-sm text-fg-muted">All fields are required unless marked optional.</p>
+
+                <form class="grid gap-5" novalidate
+                      x-data="{ sending: {{ state == 'submitting' ? 'true' : 'false' }} }"
+                      @submit.prevent="sending = true; setTimeout(() => window.location = '{{ path('mockup', {page: 'confirmation'}) }}', 900)">
+                    <div class="grid gap-5 sm:grid-cols-2">
+                        <twig:Field label="Name" for="name">
+                            <twig:Input id="name" name="name" autocomplete="given-name" value="{{ values.name }}" required />
+                        </twig:Field>
+                        <twig:Field label="Surname" for="surname">
+                            <twig:Input id="surname" name="surname" autocomplete="family-name" value="{{ values.surname }}" required />
+                        </twig:Field>
+                    </div>
+
+                    <div class="grid gap-5 sm:grid-cols-2">
+                        <twig:Field label="Email" for="email" error="{{ errors.email ?? null }}">
+                            <twig:Input id="email" name="email" type="email" autocomplete="email" value="{{ values.email }}" required
+                                        aria-invalid="{{ errors.email is defined ? 'true' : 'false' }}" />
+                        </twig:Field>
+                        <twig:Field label="Phone" for="phone" error="{{ errors.phone ?? null }}">
+                            <twig:Input id="phone" name="phone" type="tel" autocomplete="tel" value="{{ values.phone }}" required
+                                        aria-invalid="{{ errors.phone is defined ? 'true' : 'false' }}" />
+                        </twig:Field>
+                    </div>
+
+                    <twig:Field label="CV" for="cv" hint="Paste your CV as plain text.">
+                        <twig:Textarea id="cv" name="cv" rows="10" required placeholder="Experience, skills, education…" class="font-mono text-xs">{{ values.cv }}</twig:Textarea>
+                    </twig:Field>
+
+                    <twig:Field label="Notes" for="notes" optional>
+                        <twig:Textarea id="notes" name="notes" rows="3" placeholder="Anything else we should know?">{{ values.notes }}</twig:Textarea>
+                    </twig:Field>
+
+                    {% if state == 'duplicate' %}
+                        <twig:Alert tone="danger" title="You have already applied">
+                            There is already an application to this position with this email.
+                        </twig:Alert>
+                    {% endif %}
+
+                    <twig:Button size="lg" type="submit" class="w-full" x-bind:disabled="sending">
+                        <svg x-show="sending" x-cloak class="size-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                            <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-opacity="0.3" stroke-width="3"/>
+                            <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+                        </svg>
+                        <span x-text="sending ? 'Sending…' : 'Send application'">Send application</span>
+                    </twig:Button>
+                </form>
+            </section>
+        {% else %}
+            <section aria-labelledby="closed" class="rounded-xl border border-line bg-surface-muted p-6 lg:sticky lg:top-6">
+                <h2 id="closed" class="text-lg font-semibold">Applications closed</h2>
+                <p class="mt-2 text-fg-muted">This position is no longer accepting applications.</p>
+                <a href="{{ path('mockup', {page: 'positions'}) }}" class="mt-4 inline-flex items-center gap-1 text-sm font-medium no-underline">
+                    <span aria-hidden="true">←</span> All positions
+                </a>
+            </section>
+        {% endif %}
+    </div>
+{% endblock %}

@@ -1,0 +1,8 @@
+{% extends 'layouts/backoffice.html.twig' %}
+
+{% set applications_href = path('mockup', {page: 'applications'}) %}
+
+{% block body %}
+    {{ parent() }}
+    {{ include('mockups/_switcher.html.twig') }}
+{% endblock %}

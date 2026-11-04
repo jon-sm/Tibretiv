@@ -6,18 +6,25 @@ doctrine_mongodb:
             server: '%env(MONGODB_URI)%'
             options: {}
     default_database: '%env(MONGODB_DB)%'
+    # Ids are stored as BSON binary UUIDs, and read back as each context's id value object.
+    types:
+        job_position_id: App\JobPosition\Infrastructure\Persistence\JobPositionIdType
+        candidate_application_job_position_id: App\CandidateApplication\Infrastructure\Persistence\JobPositionIdType
+        candidate_application_id: App\CandidateApplication\Infrastructure\Persistence\CandidateApplicationIdType
     document_managers:
         default:
             auto_mapping: false
-            # Add one mapping per bounded context. XML keeps the Domain free of
-            # persistence attributes:
-            #
-            # mappings:
-            #     Billing:
-            #         type: xml
-            #         dir: '%kernel.project_dir%/src/Billing/Infrastructure/Persistence/Mapping'
-            #         prefix: 'App\Billing\Domain'
-            mappings: {}
+            # One mapping per bounded context. XML keeps the Domain free of
+            # persistence attributes.
+            mappings:
+                JobPosition:
+                    type: xml
+                    dir: '%kernel.project_dir%/src/JobPosition/Infrastructure/Persistence/Mapping'
+                    prefix: 'App\JobPosition\Domain'
+                CandidateApplication:
+                    type: xml
+                    dir: '%kernel.project_dir%/src/CandidateApplication/Infrastructure/Persistence/Mapping'
+                    prefix: 'App\CandidateApplication\Domain'
 
 when@prod:
     doctrine_mongodb:

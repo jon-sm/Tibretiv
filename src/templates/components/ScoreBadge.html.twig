@@ -1,0 +1,18 @@
+{#
+    AI score, coloured by band: unfit 0–49, medium 50–74, high 75–100.
+
+    <twig:ScoreBadge score="87" />               → (87)
+    <twig:ScoreBadge score="87" show="band" />   → (High)
+    <twig:ScoreBadge score="87" show="both" />   → (87 · High)
+#}
+{% props score, show = 'score' %}
+
+{% set band = score >= 75 ? {label: 'High', tone: 'success'}
+    : score >= 50 ? {label: 'Medium', tone: 'warning'}
+    : {label: 'Unfit', tone: 'danger'} %}
+
+<twig:Badge tone="{{ band.tone }}" title="{{ band.label }} fit" {{ ...attributes }}>
+    {%- if show != 'band' %}<span class="tabular-nums">{{ score }}</span>{% endif -%}
+    {%- if show == 'both' %}<span aria-hidden="true">·</span>{% endif -%}
+    {%- if show != 'score' %}{{ band.label }}{% endif -%}
+</twig:Badge>

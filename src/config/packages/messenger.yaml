@@ -14,7 +14,14 @@ framework:
         failure_transport: failed
 
         transports:
-            async: '%env(MESSENGER_TRANSPORT_DSN)%'
+            async:
+                dsn: '%env(MESSENGER_TRANSPORT_DSN)%'
+                # A failed enrichment is tried 3 more times (after 1 s, 2 s, 4 s), then
+                # marked as failed and moved to the failure transport.
+                retry_strategy:
+                    max_retries: 3
+                    delay: 1000
+                    multiplier: 2
             failed: '%env(MESSENGER_FAILURE_TRANSPORT_DSN)%'
 
         # Commands and queries are not routed, so they run synchronously.

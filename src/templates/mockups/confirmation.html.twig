@@ -1,0 +1,28 @@
+{% extends 'mockups/_public.html.twig' %}
+
+{% block page_title %}Application received{% endblock %}
+
+{# Fake data: replaced by the one-time flash message when wired. "expired" = page refreshed, flash gone. #}
+{% set flash = state == 'expired' ? null : {name: 'Jane', position: 'Senior Backend Engineer', email: 'jane.doe@gmail.com'} %}
+
+{% block content %}
+    <section class="mx-auto max-w-xl rounded-xl border border-line bg-surface p-8 text-center shadow-sm sm:p-10">
+        {% if flash %}
+            <div class="mx-auto mb-6 flex size-14 items-center justify-center rounded-full bg-success-soft text-success">
+                <svg class="size-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>
+            </div>
+            <h1 class="text-2xl font-semibold tracking-tight">Application received</h1>
+            <p class="mt-4 leading-relaxed text-fg-muted">
+                Thanks, {{ flash.name }}. We've received your application for
+                <span class="font-medium text-fg">{{ flash.position }}</span>
+                and will be in touch at <span class="font-medium text-fg">{{ flash.email }}</span>.
+            </p>
+        {% else %}
+            <h1 class="text-2xl font-semibold tracking-tight">Nothing to show here</h1>
+            <p class="mt-4 text-fg-muted">If you just applied, your application was received.</p>
+        {% endif %}
+        <a href="{{ path('mockup', {page: 'positions'}) }}" class="mt-8 inline-flex items-center gap-1 font-medium no-underline">
+            <span aria-hidden="true">←</span> See other positions
+        </a>
+    </section>
+{% endblock %}

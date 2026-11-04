@@ -1,4 +1,7 @@
 import Alpine from 'alpinejs';
+import applicationsList from './ui/applications_list.js';
+import enrichmentPoller from './ui/enrichment_poller.js';
+import statusForm from './ui/status_form.js';
 import './styles/app.css';
 
 /**
@@ -25,6 +28,10 @@ Alpine.magic('token', () => (name) => {
         ref: declared.trim().match(/^var\((--[\w-]+)\)$/)?.[1] ?? null,
     };
 });
+
+Alpine.data('applicationsList', applicationsList);
+Alpine.data('enrichmentPoller', enrichmentPoller);
+Alpine.data('statusForm', statusForm);
 
 window.Alpine = Alpine;
 Alpine.start();

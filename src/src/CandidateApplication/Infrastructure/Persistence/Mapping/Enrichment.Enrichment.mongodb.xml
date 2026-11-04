@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<doctrine-mongo-mapping xmlns="http://doctrine-project.org/schemas/odm/doctrine-mongo-mapping"
+                        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                        xsi:schemaLocation="http://doctrine-project.org/schemas/odm/doctrine-mongo-mapping
+                        https://doctrine-project.org/schemas/odm/doctrine-mongo-mapping.xsd">
+    <embedded-document name="App\CandidateApplication\Domain\Enrichment\Enrichment">
+        <field field-name="status" type="string" enum-type="App\CandidateApplication\Domain\Enrichment\EnrichmentStatus"/>
+        <field field-name="summary" type="string" nullable="true"/>
+        <field field-name="score" type="int" nullable="true"/>
+        <field field-name="enrichedAt" type="date_immutable" nullable="true"/>
+    </embedded-document>
+</doctrine-mongo-mapping>

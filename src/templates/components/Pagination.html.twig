@@ -1,0 +1,58 @@
+{#
+    <twig:Pagination :page="page.page" :pages="page.pages" :total="page.total"
+                     route="backoffice_applications" :query="query" />
+
+    Numbered pages plus Prev / Next. Shows the first, last and the pages around the current one.
+    Links go to `route` with `query` plus the page number, or to `href` + page without a route.
+#}
+{% props page, pages, total, perPage = 20, route = null, query = {}, href = '?page=' %}
+
+{% macro url(route, query, href, p) -%}
+    {{- route ? path(route, query|merge({page: p})) : href ~ p -}}
+{%- endmacro %}
+
+{% set from = (page - 1) * perPage + 1 %}
+{% set to = min(page * perPage, total) %}
+{% set window = range(max(1, page - 1), min(pages, page + 1)) %}
+{# First page, the current one and its neighbours, last page: ascending, no duplicates #}
+{% set shown = [1]|merge(window)|merge([pages])|reduce((carry, p) => p in carry ? carry : carry|merge([p]), []) %}
+
+{% set link = 'inline-flex h-9 min-w-9 items-center justify-center rounded-md px-3 text-sm font-medium text-fg no-underline hover:bg-surface-muted hover:text-fg' %}
+{% set disabled = 'inline-flex h-9 items-center justify-center rounded-md px-3 text-sm font-medium text-fg-subtle cursor-not-allowed' %}
+
+<nav aria-label="Pagination" {{ attributes.defaults({class: 'flex flex-col items-center justify-between gap-3 sm:flex-row'}) }}>
+    <p class="text-sm text-fg-muted">
+        Showing <span class="font-medium text-fg tabular-nums">{{ from }}–{{ to }}</span>
+        of <span class="font-medium text-fg tabular-nums">{{ total }}</span>
+    </p>
+    <ul class="flex items-center gap-1">
+        <li>
+            {% if page > 1 %}
+                <a href="{{ _self.url(route, query, href, page - 1) }}" class="{{ link }}" rel="prev">‹ Prev</a>
+            {% else %}
+                <span class="{{ disabled }}" aria-disabled="true">‹ Prev</span>
+            {% endif %}
+        </li>
+        {% set previous = 0 %}
+        {% for p in shown %}
+            {% if p - previous > 1 %}
+                <li class="hidden px-1 text-sm text-fg-subtle sm:block" aria-hidden="true">…</li>
+            {% endif %}
+            <li class="{{ p == page ? '' : 'hidden sm:block' }}">
+                {% if p == page %}
+                    <span class="{{ link }} bg-accent text-fg-on-accent hover:bg-accent hover:text-fg-on-accent" aria-current="page">{{ p }}</span>
+                {% else %}
+                    <a href="{{ _self.url(route, query, href, p) }}" class="{{ link }}">{{ p }}</a>
+                {% endif %}
+            </li>
+            {% set previous = p %}
+        {% endfor %}
+        <li>
+            {% if page < pages %}
+                <a href="{{ _self.url(route, query, href, page + 1) }}" class="{{ link }}" rel="next">Next ›</a>
+            {% else %}
+                <span class="{{ disabled }}" aria-disabled="true">Next ›</span>
+            {% endif %}
+        </li>
+    </ul>
+</nav>

@@ -1,0 +1,74 @@
+{#
+    Apply form for one position. Variables: see ApplyController.
+    Design: templates/mockups/apply.html.twig.
+#}
+{% extends 'layouts/public.html.twig' %}
+
+{% block page_title %}{{ position.title }}{% endblock %}
+
+{% block content %}
+    <a href="{{ path('positions_index') }}" class="inline-flex items-center gap-1 text-sm font-medium no-underline">
+        <span aria-hidden="true">←</span> All positions
+    </a>
+
+    <header class="mt-6 mb-10">
+        <h1 class="text-3xl font-semibold tracking-tight sm:text-4xl">{{ position.title }}</h1>
+        <twig:JobPositionMeta :position="position" class="mt-2 block text-lg text-fg-muted" />
+        {% if position.isOpen %}
+            {# Mobile: the form sits below a long description #}
+            <a href="#apply" class="mt-5 inline-flex h-10 items-center gap-2 rounded-md bg-accent px-4 text-sm font-medium text-fg-on-accent no-underline shadow-xs hover:bg-accent-hover hover:text-fg-on-accent lg:hidden">
+                Apply now <span aria-hidden="true">↓</span>
+            </a>
+        {% endif %}
+    </header>
+
+    <div class="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_26rem]">
+        <section aria-labelledby="about" class="rounded-xl border border-line bg-surface p-6 sm:p-8">
+            <h2 id="about" class="mb-4 text-lg font-semibold">About the role</h2>
+            <div class="leading-relaxed whitespace-pre-line text-fg-muted">{{ position.description }}</div>
+        </section>
+
+        {% if position.isOpen %}
+            <section aria-labelledby="apply-title" id="apply" class="scroll-mt-6 rounded-xl border border-line bg-surface p-6 shadow-sm lg:sticky lg:top-6">
+                <h2 id="apply-title" class="mb-1 text-lg font-semibold">Apply</h2>
+                <p class="mb-6 text-sm text-fg-muted">All fields are required unless marked optional.</p>
+
+                {{ form_start(form, {attr: {
+                    class: 'grid gap-5',
+                    'x-data': '{ sending: false }',
+                    '@submit': 'sending = true',
+                }}) }}
+                    <div class="grid gap-5 sm:grid-cols-2">
+                        {{ form_row(form.name, {attr: {autocomplete: 'given-name'}}) }}
+                        {{ form_row(form.surname, {attr: {autocomplete: 'family-name'}}) }}
+                    </div>
+                    <div class="grid gap-5 sm:grid-cols-2">
+                        {{ form_row(form.email, {attr: {autocomplete: 'email'}}) }}
+                        {{ form_row(form.phone, {attr: {autocomplete: 'tel'}}) }}
+                    </div>
+                    {{ form_row(form.cv, {help: 'Paste your CV as plain text.', attr: {rows: 10, class: 'font-mono text-xs', placeholder: 'Experience, skills, education…'}}) }}
+                    {{ form_row(form.notes, {optional: true, attr: {rows: 3, placeholder: 'Anything else we should know?'}}) }}
+
+                    {# "Already applied" is an error on the whole form #}
+                    {{ form_errors(form) }}
+
+                    <twig:Button size="lg" type="submit" class="w-full" x-bind:disabled="sending">
+                        <svg x-show="sending" x-cloak class="size-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                            <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-opacity="0.3" stroke-width="3"/>
+                            <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+                        </svg>
+                        <span x-text="sending ? 'Sending…' : 'Send application'">Send application</span>
+                    </twig:Button>
+                {{ form_end(form) }}
+            </section>
+        {% else %}
+            <section aria-labelledby="closed" class="rounded-xl border border-line bg-surface-muted p-6 lg:sticky lg:top-6">
+                <h2 id="closed" class="text-lg font-semibold">Applications closed.</h2>
+                <p class="mt-2 text-fg-muted">This position is no longer accepting applications.</p>
+                <a href="{{ path('positions_index') }}" class="mt-4 inline-flex items-center gap-1 text-sm font-medium no-underline">
+                    <span aria-hidden="true">←</span> See other positions
+                </a>
+            </section>
+        {% endif %}
+    </div>
+{% endblock %}

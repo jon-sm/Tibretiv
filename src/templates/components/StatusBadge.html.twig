@@ -1,0 +1,17 @@
+{#
+    Status of a candidate application (CandidateApplicationStatus).
+
+    <twig:StatusBadge status="contacted" />
+
+    status: received | contacted | rejected | hired
+#}
+{% props status %}
+
+{% set statuses = {
+    received: {label: 'Received', tone: 'neutral'},
+    contacted: {label: 'Contacted', tone: 'info'},
+    hired: {label: 'Hired', tone: 'success'},
+    rejected: {label: 'Rejected', tone: 'danger'},
+} %}
+
+<twig:Badge tone="{{ statuses[status].tone }}" {{ ...attributes }}>{{ statuses[status].label }}</twig:Badge>

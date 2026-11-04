@@ -1,0 +1,37 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Mockups · tibretiv{% endblock %}
+
+{% set descriptions = {
+    positions: 'Index: open positions',
+    apply: 'Apply form for one position',
+    confirmation: 'After a successful application',
+    applications: 'Backoffice: applications list',
+    application: 'Backoffice: application detail',
+} %}
+
+{% block body %}
+<main class="mx-auto max-w-3xl px-4 py-12 sm:px-6">
+    <twig:Logo />
+    <h1 class="mt-8 mb-2 text-3xl font-semibold tracking-tight">Mockups</h1>
+    <p class="mb-8 text-fg-muted">
+        Static high-fidelity designs with fake data. Each page has a floating switcher for its states.
+        Tokens and components: <a href="{{ path('design_tokens') }}">design tokens</a>.
+    </p>
+    <ul class="divide-y divide-line overflow-hidden rounded-xl border border-line bg-surface">
+        {% for name, page_states in pages|filter((s, p) => p != 'index') %}
+            <li class="flex flex-col gap-2 p-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                    <a href="{{ path('mockup', {page: name}) }}" class="font-medium">{{ name }}</a>
+                    <p class="text-sm text-fg-muted">{{ descriptions[name] }}</p>
+                </div>
+                <div class="flex flex-wrap gap-1">
+                    {% for s in page_states %}
+                        <a href="{{ path('mockup', {page: name, state: s}) }}" class="no-underline"><twig:Badge>{{ s }}</twig:Badge></a>
+                    {% endfor %}
+                </div>
+            </li>
+        {% endfor %}
+    </ul>
+</main>
+{% endblock %}

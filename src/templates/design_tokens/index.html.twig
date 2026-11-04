@@ -239,6 +239,35 @@
             </figure>
         </div>
 
+        {{ _self.group('Badge') }}
+        <div class="flex flex-wrap items-center gap-2">
+            {% for tone in ['neutral', 'info', 'success', 'warning', 'danger', 'accent'] %}
+                <twig:Badge tone="{{ tone }}">{{ tone }}</twig:Badge>
+            {% endfor %}
+        </div>
+
+        {{ _self.group('StatusBadge') }}
+        <div class="flex flex-wrap items-center gap-2">
+            {% for status in ['received', 'contacted', 'hired', 'rejected'] %}
+                <twig:StatusBadge status="{{ status }}" />
+            {% endfor %}
+        </div>
+
+        {{ _self.group('ScoreBadge: unfit 0–49, medium 50–74, high 75–100') }}
+        <div class="flex flex-wrap items-center gap-2">
+            {% for score in [31, 64, 87] %}<twig:ScoreBadge score="{{ score }}" />{% endfor %}
+            {% for score in [31, 64, 87] %}<twig:ScoreBadge score="{{ score }}" show="band" />{% endfor %}
+            {% for score in [31, 64, 87] %}<twig:ScoreBadge score="{{ score }}" show="both" />{% endfor %}
+        </div>
+
+        {{ _self.group('Alert') }}
+        <div class="grid max-w-xl gap-3">
+            <twig:Alert tone="info" title="Info">Something worth knowing.</twig:Alert>
+            <twig:Alert tone="success" title="Success">It worked.</twig:Alert>
+            <twig:Alert tone="warning" title="Warning">Check this before continuing.</twig:Alert>
+            <twig:Alert tone="danger" title="Danger">Something went wrong.</twig:Alert>
+        </div>
+
         {{ _self.group('Form controls') }}
         <div class="grid max-w-xl gap-5">
             <twig:Field label="Email" for="dt-input" hint="Input. We'll only use it to contact you.">

@@ -18,3 +18,9 @@ services:
     App\Shared\Application\Bus\Event\EventBus:
         alias: App\Shared\Infrastructure\Bus\MessengerEventBus
         public: true
+
+    # Time stands still in tests; move it with MockClock::modify() or sleep().
+    clock:
+        class: Symfony\Component\Clock\MockClock
+        arguments: ['2026-11-04 10:00:00', 'UTC']
+        public: true

@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := help
-.PHONY: help install build deps up down test phpstan deptrac
+.PHONY: help init install build deps console db up down test phpstan deptrac
 
 # Run the containers as the current user, so that they can write to ./src.
 # Precedence: command line, then environment, then .env, then the current user.
@@ -10,10 +10,10 @@ export APP_UID APP_GID
 # Arguments after "--" go to the program: make test -- --filter=Foo
 # Make reads them as extra goals, or as variables when they contain "=", so they
 # are collected here and the extra goals are turned into no-ops.
-ifneq ($(filter test phpstan deptrac,$(firstword $(MAKECMDGOALS))),)
+ifneq ($(filter console test phpstan deptrac,$(firstword $(MAKECMDGOALS))),)
 ARGS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS)) \
 	$(foreach v,$(filter -%,$(.VARIABLES)),$(if $(filter command line,$(origin $v)),$v=$(value $v)))
-ifneq ($(filter help install build deps up down test phpstan deptrac,$(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))),)
+ifneq ($(filter help init install build deps console db up down test phpstan deptrac,$(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))),)
 $(error An argument has the same name as a make target, pass it with ARGS="..." instead)
 endif
 ifneq ($(strip $(ARGS)),)
@@ -25,6 +25,8 @@ endif
 help: ## Show the available targets
 	@grep -hE '^[a-z]+:.*## ' $(MAKEFILE_LIST) | awk -F ':.*## ' '{printf "  %-10s %s\n", $$1, $$2}'
 
+init: build deps db up ## First run: build, install, create the database and seed it, then start the stack
+
 install: build deps up ## Build the images, install dependencies and start the stack
 
 build: ## Build the :base and :build images
@@ -33,6 +35,14 @@ build: ## Build the :base and :build images
 deps: ## Install the Composer dependencies and build the CSS
 	docker compose run --rm -T build composer install --no-interaction --no-progress
 	docker compose run --rm -T build bin/console tailwind:build
+
+console: ## Run a Symfony console command: make console -- router:match /backoffice/applications
+	docker compose run --rm -T build bin/console $(ARGS)
+
+db: ## Create the MongoDB collections and indexes, and seed the demo positions (safe to re-run)
+	docker compose up -d --wait mongodb
+	docker compose run --rm -T build bin/console doctrine:mongodb:schema:update
+	docker compose run --rm -T build bin/console app:job-positions:seed
 
 up: ## Start the stack in the foreground with its logs, Ctrl+C stops it
 	docker compose up

@@ -1,6 +1,7 @@
-# Symfony app skeleton
+# Tibretiv ATS
 
-Skeleton for a Symfony project using hexagonal architecture, DDD and CQRS.
+A proof-of-concept Application Tracking System.
+
 
 | Component | Version |
 | --- | --- |
@@ -10,7 +11,44 @@ Skeleton for a Symfony project using hexagonal architecture, DDD and CQRS.
 | MongoDB | 9.0, through Doctrine ODM |
 | Redis | 8.0, as the Messenger transport |
 
+## The product
+
+| Page | URL | For |
+| --- | --- | --- |
+| Open positions | <http://localhost:8080/> | Candidates pick a role |
+| Apply | `/positions/{id}` | Candidate data, plus the CV pasted as plain text |
+| Applications | <http://localhost:8080/backoffice> | Recruiters search and filter, newest first |
+| Application detail | `/backoffice/{id}` | CV, AI summary and score, status, timestamps |
+
+After an application is submitted, an AI enrichment runs in the background: it summarises the CV
+and scores its relevance (0–100) for the position. The list and detail show "Analysing…" until it
+finishes, and refresh on their own.
+
+### Demo notes
+
+- The LLM is mocked: no API is called. Until the scoring criteria are agreed, it returns the start
+  of the CV as the summary and a fixed score of 50, after a short simulated delay.
+- A CV containing `FAIL_ENRICHMENT` makes every attempt fail, to show the retry and failed path.
+- One application per email per position. Gmail dots and `+tags` count as the same mailbox.
+- The backoffice has no login in this demo.
+- Dates in the backoffice are shown and filtered in Europe/Madrid time.
+
+### Known limitations
+
+- Events are published right after saving, without an outbox: if Redis is down at that moment the enrichment is not started, or saved.
+- A failed enrichment cannot be retried from the UI yet.
+
 ## Getting started
+
+```console
+make init
+```
+
+This builds the images, installs the dependencies, creates the MongoDB indexes, seeds the demo
+positions and starts the stack. Afterwards, `make up` starts it again, and `make db` re-creates the
+indexes and re-seeds the positions (safe to re-run).
+
+The steps below describe `make install`, which does the same without the database setup.
 
 ```console
 make install
@@ -20,11 +58,12 @@ This builds the images, installs the Composer dependencies and starts the stack 
 showing its logs until you press Ctrl+C, which stops it. Each step is also
 available on its own as `make build`, `make deps` and `make up`. Stop the stack with `make down`.
 
-The app is served on <http://localhost:8080>. It returns a 404 until you add a first route.
+The app is served on <http://localhost:8080>.
 PHP-FPM's Prometheus metrics are served on <http://localhost:9253/metrics>.
+MongoDB is reachable from the host on `mongodb://app:app@localhost:27017` (localhost only).
 
 `make` runs the containers with your UID/GID. To override them, or if ports 8080 or 9253 are taken,
-set `APP_UID`, `APP_GID`, `APP_PORT` or `METRICS_PORT` in the environment or in a root `.env` file
+set `APP_UID`, `APP_GID`, `APP_PORT`, `METRICS_PORT` or `MONGODB_PORT` in the environment or in a root `.env` file
 before building.
 
 ## Images
@@ -62,6 +101,9 @@ make deptrac
 ```
 
 `make test`, `make phpstan` and `make deptrac` pass anything after `--` to the program:
+
+Tests use a separate `app_test` MongoDB database, so the stack must be running. They cover
+submission, filtering and search, the enrichment (including retries and failure) and the pages.
 
 ```console
 make test -- --filter=MessengerBusTest

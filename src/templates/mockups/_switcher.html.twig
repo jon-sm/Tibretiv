@@ -1,0 +1,18 @@
+{# Floating bar to jump between mockups and their states. Not part of the design. #}
+<aside x-data="{ open: true }" class="fixed right-4 bottom-4 z-50 max-w-[calc(100vw-2rem)] text-xs" aria-label="Mockup navigation">
+    <div x-show="open" class="grid gap-2 rounded-lg bg-fg/95 p-3 text-white shadow-lg">
+        <div class="flex items-center justify-between gap-4">
+            <a href="{{ path('mockup') }}" class="font-semibold text-white no-underline hover:text-white">Mockups</a>
+            <button type="button" @click="open = false" class="cursor-pointer text-white/60 hover:text-white" aria-label="Hide">✕</button>
+        </div>
+        {% if states|length > 1 %}
+            <div class="flex flex-wrap gap-1">
+                {% for s in states %}
+                    <a href="{{ path('mockup', {page: page, state: s}) }}"
+                       class="rounded px-2 py-1 no-underline {{ s == state ? 'bg-white text-fg hover:text-fg' : 'bg-white/10 text-white hover:bg-white/20 hover:text-white' }}">{{ s }}</a>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+    <button x-show="!open" type="button" @click="open = true" class="cursor-pointer rounded-full bg-fg/95 px-3 py-2 font-semibold text-white shadow-lg">Mockups</button>
+</aside>

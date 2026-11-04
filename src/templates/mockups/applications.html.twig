@@ -1,0 +1,184 @@
+{% extends 'mockups/_backoffice.html.twig' %}
+
+{% set nav = 'applications' %}
+
+{% block page_title %}Applications{% endblock %}
+
+{#
+    Fake data: replaced by the "list applications" query when wired.
+    enrichment: completed (has score) | pending | failed
+#}
+{% set positions = ['Senior Backend Engineer', 'Product Designer', 'Data Engineer', 'Frontend Engineer'] %}
+{% set all_rows = [
+    {name: 'Jane Doe', position: 'Senior Backend Engineer', status: 'received', enrichment: 'completed', score: 87, applied: '1 h ago', appliedAt: '4 Nov 2026, 11:15'},
+    {name: 'Luis García', position: 'Product Designer', status: 'received', enrichment: 'pending', score: null, applied: '3 h ago', appliedAt: '4 Nov 2026, 09:02'},
+    {name: 'Ana Ruiz', position: 'Senior Backend Engineer', status: 'contacted', enrichment: 'completed', score: 64, applied: '2 d ago', appliedAt: '2 Nov 2026, 16:40'},
+    {name: 'Tom Berg', position: 'Data Engineer', status: 'received', enrichment: 'failed', score: null, applied: '3 d ago', appliedAt: '1 Nov 2026, 10:21'},
+    {name: 'Eva Kim', position: 'Data Engineer', status: 'rejected', enrichment: 'completed', score: 31, applied: '1 w ago', appliedAt: '28 Oct 2026, 12:05'},
+    {name: 'Marc Puig', position: 'Frontend Engineer', status: 'hired', enrichment: 'completed', score: 92, applied: '2 w ago', appliedAt: '21 Oct 2026, 09:47'},
+    {name: 'Sofia Rossi', position: 'Product Designer', status: 'contacted', enrichment: 'completed', score: 78, applied: '2 w ago', appliedAt: '20 Oct 2026, 18:30'},
+    {name: 'David Chen', position: 'Senior Backend Engineer', status: 'received', enrichment: 'completed', score: 55, applied: '3 w ago', appliedAt: '14 Oct 2026, 08:12'},
+] %}
+
+{% set filters = state in ['filtered', 'no-results']
+    ? {q: state == 'no-results' ? 'zzz' : 'jane', position: state == 'filtered' ? 'Senior Backend Engineer' : '', status: '', enrichment: '', minScore: '', from: '', to: ''}
+    : {q: '', position: '', status: '', enrichment: '', minScore: '', from: '', to: ''} %}
+{% set rows = state == 'empty' or state == 'no-results' ? []
+    : state == 'filtered' ? all_rows|filter(r => r.name == 'Jane Doe')
+    : all_rows %}
+{% set total = state == 'default' ? 128 : rows|length %}
+
+{% macro score(row) %}
+    {% if row.enrichment == 'completed' %}
+        <twig:ScoreBadge score="{{ row.score }}" />
+    {% elseif row.enrichment == 'pending' %}
+        <span class="inline-flex items-center gap-1.5 text-sm text-fg-subtle">
+            <span class="size-1.5 animate-pulse rounded-full bg-fg-subtle" aria-hidden="true"></span>Analysing…
+        </span>
+    {% else %}
+        <span class="text-sm font-medium text-danger">Failed</span>
+    {% endif %}
+{% endmacro %}
+
+{% block content %}
+    <div x-data="{
+            showFilters: false,
+            f: {{ filters|json_encode|e('html_attr') }},
+            get dirty() { return Object.values(this.f).some(v => v !== '') },
+            clear() { Object.keys(this.f).forEach(k => this.f[k] = '') },
+         }">
+        <header class="mb-6 flex flex-wrap items-end justify-between gap-2">
+            <h1 class="text-2xl font-semibold tracking-tight sm:text-3xl">Applications</h1>
+            <p class="text-sm text-fg-muted"><span class="font-medium text-fg tabular-nums">{{ total }}</span> {{ total == 1 ? 'application' : 'applications' }}</p>
+        </header>
+
+        {# Filters #}
+        <section aria-label="Filters" class="mb-6 rounded-xl border border-line bg-surface p-4 shadow-xs">
+            <div class="flex gap-3">
+                <div class="relative flex-1">
+                    <svg class="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-fg-subtle" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                        <path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.45 4.39l3.08 3.08a.75.75 0 1 1-1.06 1.06l-3.08-3.08A7 7 0 0 1 2 9Z" clip-rule="evenodd"/>
+                    </svg>
+                    <label for="q" class="sr-only">Search</label>
+                    <twig:Input id="q" type="search" placeholder="Search name, surname or email…" class="pl-9" x-model="f.q" />
+                </div>
+                <button type="button" class="inline-flex h-10 items-center gap-2 rounded-md border border-line-strong bg-surface px-3 text-sm font-medium md:hidden"
+                        @click="showFilters = !showFilters" x-bind:aria-expanded="showFilters">
+                    <svg class="size-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M3 5a1 1 0 0 1 1-1h12a1 1 0 0 1 .8 1.6L12 12v4a1 1 0 0 1-1.45.9l-2-1A1 1 0 0 1 8 15v-3L3.2 5.6A1 1 0 0 1 3 5Z"/></svg>
+                    Filters
+                </button>
+            </div>
+
+            <div class="mt-4 gap-4 md:grid md:grid-cols-[repeat(3,minmax(0,1fr))_8rem_minmax(0,1.6fr)]"
+                 x-bind:class="showFilters ? 'grid' : 'hidden'">
+                <twig:Field label="Position" for="f-position">
+                    <twig:Select id="f-position" x-model="f.position">
+                        <option value="">All positions</option>
+                        {% for p in positions %}<option>{{ p }}</option>{% endfor %}
+                    </twig:Select>
+                </twig:Field>
+                <twig:Field label="Status" for="f-status">
+                    <twig:Select id="f-status" x-model="f.status">
+                        <option value="">All statuses</option>
+                        <option value="received">Received</option>
+                        <option value="contacted">Contacted</option>
+                        <option value="rejected">Rejected</option>
+                        <option value="hired">Hired</option>
+                    </twig:Select>
+                </twig:Field>
+                <twig:Field label="Enrichment" for="f-enrichment">
+                    <twig:Select id="f-enrichment" x-model="f.enrichment">
+                        <option value="">All</option>
+                        <option value="completed">Processed</option>
+                        <option value="pending">Pending</option>
+                        <option value="failed">Failed</option>
+                    </twig:Select>
+                </twig:Field>
+                <twig:Field label="Min score" for="f-score">
+                    <twig:Input id="f-score" type="number" min="0" max="100" inputmode="numeric" placeholder="0–100" x-model="f.minScore" />
+                </twig:Field>
+                <fieldset class="grid gap-1.5">
+                    <legend class="mb-1.5 text-sm font-medium text-fg">Applied</legend>
+                    <div class="flex items-center gap-2">
+                        <label for="f-from" class="sr-only">Applied from</label>
+                        <twig:DatePicker id="f-from" x-model="f.from" />
+                        <span class="text-fg-subtle" aria-hidden="true">–</span>
+                        <label for="f-to" class="sr-only">Applied to</label>
+                        <twig:DatePicker id="f-to" x-model="f.to" />
+                    </div>
+                </fieldset>
+            </div>
+
+            <div x-show="dirty" x-cloak class="mt-3 flex justify-end">
+                <button type="button" @click="clear()" class="cursor-pointer text-sm font-medium text-accent hover:text-accent-hover">Clear filters</button>
+            </div>
+        </section>
+
+        {# Results #}
+        {% if rows is empty %}
+            <div class="rounded-xl border border-dashed border-line-strong bg-surface px-6 py-16 text-center">
+                {% if state == 'empty' %}
+                    <p class="font-medium">No applications yet.</p>
+                    <p class="mt-1 text-sm text-fg-muted">They will show up here as soon as candidates apply.</p>
+                {% else %}
+                    <p class="font-medium">No applications match these filters.</p>
+                    <button type="button" @click="clear()" class="mt-2 cursor-pointer text-sm font-medium text-accent hover:text-accent-hover">Clear filters</button>
+                {% endif %}
+            </div>
+        {% else %}
+            {# Table, from md up #}
+            <div class="hidden overflow-hidden rounded-xl border border-line bg-surface shadow-xs md:block">
+                <table class="w-full text-left text-sm">
+                    <thead class="border-b border-line bg-surface-muted/60 text-xs font-medium tracking-wide text-fg-muted uppercase">
+                        <tr>
+                            <th scope="col" class="px-4 py-3 font-medium">Status</th>
+                            <th scope="col" class="px-4 py-3 font-medium">Position</th>
+                            <th scope="col" class="px-4 py-3 font-medium">Applicant</th>
+                            <th scope="col" class="px-4 py-3 font-medium">Score</th>
+                            <th scope="col" class="px-4 py-3 text-right font-medium">Applied</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-line">
+                        {% for row in rows %}
+                            {% set detail = path('mockup', {page: 'application', state: row.enrichment}) %}
+                            <tr class="relative transition-colors hover:bg-surface-muted/60">
+                                <td class="px-4 py-3"><twig:StatusBadge status="{{ row.status }}" /></td>
+                                <td class="px-4 py-3 text-fg-muted">{{ row.position }}</td>
+                                <td class="px-4 py-3">
+                                    <a href="{{ detail }}" class="font-medium text-fg no-underline after:absolute after:inset-0 hover:text-accent">{{ row.name }}</a>
+                                </td>
+                                <td class="px-4 py-3">{{ _self.score(row) }}</td>
+                                <td class="px-4 py-3 text-right whitespace-nowrap text-fg-muted">
+                                    <time title="{{ row.appliedAt }} (Europe/Madrid)">{{ row.applied }}</time>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            {# Cards, below md #}
+            <ul class="grid gap-3 md:hidden">
+                {% for row in rows %}
+                    <li class="relative rounded-xl border border-line bg-surface p-4 shadow-xs">
+                        <div class="flex items-start justify-between gap-3">
+                            <a href="{{ path('mockup', {page: 'application', state: row.enrichment}) }}" class="font-medium text-fg no-underline after:absolute after:inset-0">{{ row.name }}</a>
+                            {{ _self.score(row) }}
+                        </div>
+                        <p class="mt-1 text-sm text-fg-muted">{{ row.position }}</p>
+                        <div class="mt-3 flex items-center justify-between">
+                            <twig:StatusBadge status="{{ row.status }}" />
+                            <time class="text-sm text-fg-subtle" title="{{ row.appliedAt }} (Europe/Madrid)">{{ row.applied }}</time>
+                        </div>
+                    </li>
+                {% endfor %}
+            </ul>
+
+            {% if state == 'default' %}
+                <twig:Pagination :page="1" :pages="7" :total="128" class="mt-6" />
+            {% else %}
+                <twig:Pagination :page="1" :pages="1" total="{{ total }}" class="mt-6" />
+            {% endif %}
+        {% endif %}
+    </div>
+{% endblock %}

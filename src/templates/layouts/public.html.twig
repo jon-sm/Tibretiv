@@ -1,0 +1,25 @@
+{#
+    Candidate-facing layout: brand header, content, footer.
+    Set `home_href` before extending to point the logo somewhere other than "/".
+#}
+{% extends 'base.html.twig' %}
+
+{% block title %}{% block page_title %}Careers{% endblock %} · tibretiv{% endblock %}
+
+{% block body %}
+<div class="flex min-h-screen flex-col">
+    <header class="border-b border-line bg-surface">
+        <div class="mx-auto flex h-16 max-w-5xl items-center px-4 sm:px-6">
+            <twig:Logo href="{{ home_href|default(path('positions_index')) }}" />
+        </div>
+    </header>
+
+    <main class="mx-auto w-full max-w-5xl flex-1 px-4 py-10 sm:px-6 sm:py-14">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="border-t border-line">
+        <div class="mx-auto max-w-5xl px-4 py-6 text-sm text-fg-subtle sm:px-6">© 2026 tibretiv</div>
+    </footer>
+</div>
+{% endblock %}

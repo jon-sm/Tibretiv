@@ -1,0 +1,152 @@
+{#
+    Backoffice: applications list. Variables: see CandidateApplicationsController::list().
+    An XMLHttpRequest renders only the "results" block, which the filters swap in as you type.
+    Design: templates/mockups/applications.html.twig.
+#}
+{% extends 'layouts/backoffice.html.twig' %}
+
+{% set nav = 'applications' %}
+
+{% block page_title %}Applications{% endblock %}
+
+{% macro score(application) %}
+    {% if application.enrichmentStatus == 'completed' %}
+        <twig:ScoreBadge score="{{ application.score }}" />
+    {% elseif application.enrichmentStatus == 'pending' %}
+        <span class="inline-flex items-center gap-1.5 text-sm text-fg-subtle">
+            <span class="size-1.5 animate-pulse rounded-full bg-fg-subtle" aria-hidden="true"></span>Analysing…
+        </span>
+    {% else %}
+        <span class="text-sm font-medium text-danger">Failed</span>
+    {% endif %}
+{% endmacro %}
+
+{% macro applied(application) %}
+    <time datetime="{{ application.appliedAt|date('c') }}" title="{{ application.appliedAt|date('j M Y, H:i', 'Europe/Madrid') }} (Europe/Madrid)">{{ application.appliedAt|time_ago }}</time>
+{% endmacro %}
+
+{% block content %}
+    <div x-data="applicationsList('{{ path('backoffice_enrichment_states') }}')">
+        <h1 class="mb-6 text-2xl font-semibold tracking-tight sm:text-3xl">Applications</h1>
+
+        {# Filters: a GET form that also works without JavaScript #}
+        {{ form_start(filters, {attr: {
+            'x-ref': 'filters',
+            '@input.debounce.300ms': 'refresh()',
+            '@submit.prevent': 'refresh()',
+            class: 'mb-6 rounded-xl border border-line bg-surface p-4 shadow-xs',
+            'aria-label': 'Filters',
+            role: 'search',
+        }}) }}
+            <div x-data="{ showFilters: false }">
+                <div class="flex gap-3">
+                    <div class="relative flex-1">
+                        <svg class="pointer-events-none absolute top-1/2 left-3 z-10 size-4 -translate-y-1/2 text-fg-subtle" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                            <path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.45 4.39l3.08 3.08a.75.75 0 1 1-1.06 1.06l-3.08-3.08A7 7 0 0 1 2 9Z" clip-rule="evenodd"/>
+                        </svg>
+                        {{ form_label(filters.q, null, {label_attr: {class: 'sr-only'}}) }}
+                        {{ form_widget(filters.q, {attr: {class: 'pl-9'}}) }}
+                    </div>
+                    <button type="button" class="inline-flex h-10 cursor-pointer items-center gap-2 rounded-md border border-line-strong bg-surface px-3 text-sm font-medium md:hidden"
+                            @click="showFilters = !showFilters" x-bind:aria-expanded="showFilters">
+                        <svg class="size-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M3 5a1 1 0 0 1 1-1h12a1 1 0 0 1 .8 1.6L12 12v4a1 1 0 0 1-1.45.9l-2-1A1 1 0 0 1 8 15v-3L3.2 5.6A1 1 0 0 1 3 5Z"/></svg>
+                        Filters
+                    </button>
+                    {# Without JavaScript, filters apply on submit #}
+                    <noscript><button type="submit" class="h-10 rounded-md bg-accent px-4 text-sm font-medium text-fg-on-accent">Filter</button></noscript>
+                </div>
+
+                <div class="mt-4 gap-4 md:grid md:grid-cols-[repeat(3,minmax(0,1fr))_8rem_minmax(0,1.6fr)]"
+                     x-bind:class="showFilters ? 'grid' : 'hidden'">
+                    {{ form_row(filters.position, {placeholder: 'All positions'}) }}
+                    {{ form_row(filters.status, {placeholder: 'All statuses'}) }}
+                    {{ form_row(filters.enrichment) }}
+                    {{ form_row(filters.minScore, {attr: {placeholder: '0–100', inputmode: 'numeric'}}) }}
+                    <fieldset class="grid content-start gap-1.5">
+                        <legend class="mb-1.5 text-sm font-medium text-fg">Applied</legend>
+                        <div class="flex items-center gap-2">
+                            {{ form_label(filters.from, null, {label_attr: {class: 'sr-only'}}) }}
+                            {{ form_widget(filters.from) }}
+                            <span class="text-fg-subtle" aria-hidden="true">–</span>
+                            {{ form_label(filters.to, null, {label_attr: {class: 'sr-only'}}) }}
+                            {{ form_widget(filters.to) }}
+                        </div>
+                    </fieldset>
+                </div>
+            </div>
+        {{ form_end(filters, {render_rest: false}) }}
+
+        {{ block('results') }}
+    </div>
+{% endblock %}
+
+{% block results %}
+<div id="results">
+    <div class="mb-3 flex items-center justify-between gap-4">
+        <p class="text-sm text-fg-muted" role="status">
+            <span class="font-medium text-fg tabular-nums">{{ page.total }}</span> {{ page.total == 1 ? 'application' : 'applications' }}
+        </p>
+        {% if hasFilters %}
+            <a href="{{ path('backoffice_applications') }}" class="text-sm font-medium no-underline">Clear filters</a>
+        {% endif %}
+    </div>
+
+    {% if page.items is empty %}
+        <div class="rounded-xl border border-dashed border-line-strong bg-surface px-6 py-16 text-center">
+            {% if hasFilters %}
+                <p class="font-medium">No applications match these filters.</p>
+                <a href="{{ path('backoffice_applications') }}" class="mt-2 inline-block text-sm font-medium no-underline">Clear filters</a>
+            {% else %}
+                <p class="font-medium">No applications yet.</p>
+                <p class="mt-1 text-sm text-fg-muted">They will show up here as soon as candidates apply.</p>
+            {% endif %}
+        </div>
+    {% else %}
+        {# Table, from md up #}
+        <div class="hidden overflow-hidden rounded-xl border border-line bg-surface shadow-xs md:block">
+            <table class="w-full text-left text-sm">
+                <thead class="border-b border-line bg-surface-muted/60 text-xs font-medium tracking-wide text-fg-muted uppercase">
+                    <tr>
+                        <th scope="col" class="px-4 py-3 font-medium">Status</th>
+                        <th scope="col" class="px-4 py-3 font-medium">Position</th>
+                        <th scope="col" class="px-4 py-3 font-medium">Applicant</th>
+                        <th scope="col" class="px-4 py-3 font-medium">Score</th>
+                        <th scope="col" class="px-4 py-3 text-right font-medium">Applied</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-line">
+                    {% for application in page.items %}
+                        <tr class="relative transition-colors hover:bg-surface-muted/60" data-application="{{ application.id }}" data-enrichment="{{ application.enrichmentStatus }}">
+                            <td class="px-4 py-3"><twig:StatusBadge status="{{ application.status }}" /></td>
+                            <td class="px-4 py-3 text-fg-muted">{{ application.position.title ?? '—' }}</td>
+                            <td class="px-4 py-3"><a href="{{ path('backoffice_application', {id: application.id}|merge(query)) }}" class="font-medium text-fg no-underline after:absolute after:inset-0 hover:text-accent">{{ application.fullName }}</a></td>
+                            <td class="px-4 py-3">{{ _self.score(application) }}</td>
+                            <td class="px-4 py-3 text-right whitespace-nowrap text-fg-muted">{{ _self.applied(application) }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {# Cards, below md #}
+        <ul class="grid gap-3 md:hidden">
+            {% for application in page.items %}
+                <li class="relative rounded-xl border border-line bg-surface p-4 shadow-xs">
+                    <div class="flex items-start justify-between gap-3">
+                        <a href="{{ path('backoffice_application', {id: application.id}|merge(query)) }}" class="font-medium text-fg no-underline after:absolute after:inset-0">{{ application.fullName }}</a>
+                        {{ _self.score(application) }}
+                    </div>
+                    <p class="mt-1 text-sm text-fg-muted">{{ application.position.title ?? '—' }}</p>
+                    <div class="mt-3 flex items-center justify-between">
+                        <twig:StatusBadge status="{{ application.status }}" />
+                        <span class="text-sm text-fg-subtle">{{ _self.applied(application) }}</span>
+                    </div>
+                </li>
+            {% endfor %}
+        </ul>
+
+        <twig:Pagination :page="page.page" :pages="page.pages" :total="page.total" :perPage="page.perPage"
+                         route="backoffice_applications" :query="query" class="mt-6" />
+    {% endif %}
+</div>
+{% endblock %}
