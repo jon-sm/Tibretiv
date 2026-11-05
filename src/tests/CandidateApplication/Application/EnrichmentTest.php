@@ -41,7 +41,8 @@ final class EnrichmentTest extends DatabaseTestCase
         $enrichment = $this->enrichment();
         self::assertSame('completed', $enrichment['status']);
         self::assertSame('Ten years building backend systems in PHP.', $enrichment['summary']);
-        self::assertSame(MockCvAnalyser::STUB_SCORE, $enrichment['score']);
+        self::assertGreaterThanOrEqual(MockCvAnalyser::SCORE_MIN, $enrichment['score']);
+        self::assertLessThanOrEqual(MockCvAnalyser::SCORE_MAX, $enrichment['score']);
         self::assertEquals(new \DateTimeImmutable('2026-11-04 10:00:05 UTC'), $enrichment['enrichedAt']->toDateTime());
         self::assertCount(0, $this->failedTransport()->getSent());
     }

@@ -19,8 +19,8 @@ use Symfony\Component\DependencyInjection\Attribute\Autowire;
 final readonly class MockCvAnalyser implements CvAnalyser
 {
     public const string FAILURE_TRIGGER = 'FAIL_ENRICHMENT';
-    public const int STUB_SCORE_MIN = 0;
-    public const int STUB_SCORE_MAX = 100;
+    public const int SCORE_MIN = 0;
+    public const int SCORE_MAX = 100;
     private const int SUMMARY_LENGTH = 280;
 
     public function __construct(
@@ -40,7 +40,7 @@ final readonly class MockCvAnalyser implements CvAnalyser
             throw new CvAnalysisFailed('The mocked LLM was asked to fail.');
         }
 
-        return new CvAnalysis(self::summarise($cv), rand(self::STUB_SCORE_MIN, self::STUB_SCORE_MAX));
+        return new CvAnalysis(self::summarise($cv), rand(self::SCORE_MIN, self::SCORE_MAX));
     }
 
     private static function summarise(string $cv): string

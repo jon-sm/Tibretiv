@@ -15,7 +15,8 @@ final class MockCvAnalyserTest extends TestCase
     {
         $analysis = (new MockCvAnalyser())->analyse(str_repeat('Backend engineer with PHP. ', 30), $this->position());
 
-        self::assertSame(MockCvAnalyser::STUB_SCORE, $analysis->score);
+        self::assertGreaterThanOrEqual(MockCvAnalyser::SCORE_MIN, $analysis->score);
+        self::assertLessThanOrEqual(MockCvAnalyser::SCORE_MAX, $analysis->score);
         self::assertStringStartsWith('Backend engineer with PHP.', $analysis->summary);
         self::assertStringEndsWith('…', $analysis->summary);
         self::assertLessThanOrEqual(281, mb_strlen($analysis->summary));
