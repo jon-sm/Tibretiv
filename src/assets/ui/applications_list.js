@@ -8,12 +8,15 @@
  * - Invalid filters come back as 422 {errors}: they are shown, and the last results are kept.
  * - Auto-refresh re-queries the same filters and page every 10 s while the tab is visible. It is on
  *   by default and the choice is remembered in this browser.
+ * - An application applied after the page was opened is marked "New" (blue badge in place of the
+ *   time, blue-tinted row) for 5 minutes from its appliedAt. Reloading the page clears the marks.
  *
  * The element carries data-api-url and data-detail-url (with __id__ for the application id).
  */
 const AUTO_REFRESH_KEY = 'applications.autoRefresh';
 const TIMEZONE = 'Europe/Madrid';
 const DEBOUNCED_TYPES = ['search', 'text', 'number'];
+const NEW_FOR = 5 * 60 * 1000;
 
 /* Same classes as templates/components/Badge.html.twig */
 const BADGE = 'inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium whitespace-nowrap ring-1 ring-inset';
@@ -69,6 +72,8 @@ export default (interval = 10000) => ({
     now: Date.now(),
     autoRefresh: readAutoRefresh(),
     interval,
+    /** When the component was created: applications applied after it are "new" */
+    createdAt: Date.now(),
 
     init() {
         this.apiUrl = this.$el.dataset.apiUrl;
@@ -287,6 +292,15 @@ export default (interval = 10000) => ({
     fullName(item) {
         return `${item.candidate.name} ${item.candidate.surname}`;
     },
+
+    /** Applied after the page was opened, less than 5 minutes ago. Re-evaluated every second via now. */
+    isNew(item) {
+        const appliedAt = Date.parse(item.appliedAt);
+
+        return appliedAt >= this.createdAt && this.now - appliedAt < NEW_FOR;
+    },
+
+    newBadge: `${BADGE} ${TONES.info}`,
 
     statusBadge(status) {
         const { label, tone } = STATUSES[status] ?? { label: status, tone: 'neutral' };

@@ -25,7 +25,12 @@
 {% endmacro %}
 
 {% macro applied() %}
-    <time x-bind:datetime="item.appliedAt" x-bind:title="exactTime(item.appliedAt)" x-text="timeAgo(item.appliedAt)"></time>
+    <template x-if="isNew(item)">
+        <time x-bind:datetime="item.appliedAt" x-bind:title="exactTime(item.appliedAt)" x-bind:class="newBadge">New</time>
+    </template>
+    <template x-if="!isNew(item)">
+        <time x-bind:datetime="item.appliedAt" x-bind:title="exactTime(item.appliedAt)" x-text="timeAgo(item.appliedAt)"></time>
+    </template>
 {% endmacro %}
 
 {% set link = 'inline-flex h-9 min-w-9 items-center justify-center rounded-md px-3 text-sm font-medium text-fg no-underline hover:bg-surface-muted hover:text-fg' %}
@@ -184,7 +189,7 @@
                             </thead>
                             <tbody class="divide-y divide-line">
                                 <template x-for="item in items" :key="item.id">
-                                    <tr class="relative transition-colors hover:bg-surface-muted/60" x-bind:data-application="item.id" x-bind:data-enrichment="item.enrichment.status">
+                                    <tr class="relative transition-colors" x-bind:class="isNew(item) ? 'bg-info-soft hover:bg-info-soft/70' : 'hover:bg-surface-muted/60'" x-bind:data-application="item.id" x-bind:data-enrichment="item.enrichment.status">
                                         <td class="px-4 py-3"><span x-bind:class="statusBadge(item.status).class" x-text="statusBadge(item.status).label"></span></td>
                                         <td class="px-4 py-3 text-fg-muted" x-text="item.position?.title ?? '—'"></td>
                                         <td class="px-4 py-3"><a x-bind:href="detailHref(item)" class="font-medium text-fg no-underline after:absolute after:inset-0 hover:text-accent" x-text="fullName(item)"></a></td>
@@ -199,7 +204,7 @@
                     {# Cards, below md #}
                     <ul class="grid gap-3 md:hidden">
                         <template x-for="item in items" :key="item.id">
-                            <li class="relative rounded-xl border border-line bg-surface p-4 shadow-xs">
+                            <li class="relative rounded-xl border p-4 shadow-xs transition-colors" x-bind:class="isNew(item) ? 'border-info/30 bg-info-soft' : 'border-line bg-surface'">
                                 <div class="flex items-start justify-between gap-3">
                                     <a x-bind:href="detailHref(item)" class="font-medium text-fg no-underline after:absolute after:inset-0" x-text="fullName(item)"></a>
                                     {{ _self.score() }}
