@@ -21,7 +21,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Routing\Requirement\Requirement;
 
-final class ApplyController extends AbstractController
+final class CandidateApplicationSubmissionController extends AbstractController
 {
     public const string CONFIRMATION_FLASH = 'application_received';
     public const string ALREADY_APPLIED_MESSAGE = 'You have already applied to this position with this email.';

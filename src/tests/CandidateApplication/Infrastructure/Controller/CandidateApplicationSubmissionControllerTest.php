@@ -8,7 +8,7 @@ use App\CandidateApplication\Domain\CandidateApplication;
 use App\Tests\Support\DatabaseTestCase;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 
-final class ApplyControllerTest extends DatabaseTestCase
+final class CandidateApplicationSubmissionControllerTest extends DatabaseTestCase
 {
     private KernelBrowser $client;
 

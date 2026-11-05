@@ -32,6 +32,7 @@ final readonly class SubmitCandidateApplicationHandler implements CommandHandler
      */
     public function __invoke(SubmitCandidateApplication $command): void
     {
+        // validate job position exists
         $position = $this->positions->find($command->positionId)
             ?? throw JobPositionNotAcceptingApplications::notFound($command->positionId);
 
@@ -42,6 +43,7 @@ final readonly class SubmitCandidateApplicationHandler implements CommandHandler
         $positionId = new JobPositionId($position->id);
         $email = new EmailAddress($command->email);
 
+        // validate candidate has not already applied to this position
         if ($this->applications->existsForPosition($positionId, $email->canonical)) {
             throw AlreadyApplied::toPosition($positionId);
         }
