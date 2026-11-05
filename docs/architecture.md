@@ -69,6 +69,19 @@ Failed events are retried, then moved to the `failed` transport. Inspect them wi
 Writes go through aggregates and repositories. Reads use read-model ports in Application,
 implemented with the raw MongoDB collection, without hydrating aggregates.
 
+### Naming read-side DTOs
+
+| Name | For | Example |
+| --- | --- | --- |
+| `<Aggregate>View` | The whole aggregate, flattened for display, as its own context's read model returns it | `JobPositionView`, `CandidateApplicationView` |
+| What it holds | Part of an aggregate, or a wrapper around views | `EnrichmentState` (polling), `CandidateApplicationsPage` |
+| `<Aggregate>Criteria` | The filters of a read-model search | `CandidateApplicationCriteria` |
+| In `Application/Port/`, after what the context needs | Data that crosses a port, owned by the consuming context. It is never another context's `View` | `JobPositionInfo`, `CvAnalysis` |
+
+A position therefore has two DTOs on purpose: `JobPositionView` in its own context, and
+`JobPositionInfo` for `CandidateApplication`. The `JobPositionCatalog` adapter translates the first
+into the second.
+
 ## Persistence
 
 Add one entry per context under `mappings` in `config/packages/doctrine_mongodb.yaml`. Map documents
