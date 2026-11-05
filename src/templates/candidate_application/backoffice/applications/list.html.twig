@@ -1,6 +1,7 @@
 {#
     Backoffice: applications list. Variables: see CandidateApplicationsController::list().
-    An XMLHttpRequest renders only the "results" block, which the filters swap in as you type.
+    Twig renders the shell and the filters; the rows, pagination and states are rendered by the
+    applicationsList Alpine component (assets/ui/applications_list.js) from GET /api/applications.
     Design: templates/mockups/applications.html.twig.
 #}
 {% extends 'layouts/backoffice.html.twig' %}
@@ -9,31 +10,42 @@
 
 {% block page_title %}Applications{% endblock %}
 
-{% macro score(application) %}
-    {% if application.enrichmentStatus == 'completed' %}
-        <twig:ScoreBadge score="{{ application.score }}" />
-    {% elseif application.enrichmentStatus == 'pending' %}
+{% macro score() %}
+    <template x-if="item.enrichment.status === 'completed'">
+        <span x-bind:class="scoreBadge(item.enrichment.score).class" x-bind:title="scoreBadge(item.enrichment.score).title"><span class="tabular-nums" x-text="item.enrichment.score"></span></span>
+    </template>
+    <template x-if="item.enrichment.status === 'pending'">
         <span class="inline-flex items-center gap-1.5 text-sm text-fg-subtle">
             <span class="size-1.5 animate-pulse rounded-full bg-fg-subtle" aria-hidden="true"></span>Analysing…
         </span>
-    {% else %}
+    </template>
+    <template x-if="item.enrichment.status === 'failed'">
         <span class="text-sm font-medium text-danger">Failed</span>
-    {% endif %}
+    </template>
 {% endmacro %}
 
-{% macro applied(application) %}
-    <time datetime="{{ application.appliedAt|date('c') }}" title="{{ application.appliedAt|date('j M Y, H:i', 'Europe/Madrid') }} (Europe/Madrid)">{{ application.appliedAt|time_ago }}</time>
+{% macro applied() %}
+    <time x-bind:datetime="item.appliedAt" x-bind:title="exactTime(item.appliedAt)" x-text="timeAgo(item.appliedAt)"></time>
 {% endmacro %}
+
+{% set link = 'inline-flex h-9 min-w-9 items-center justify-center rounded-md px-3 text-sm font-medium text-fg no-underline hover:bg-surface-muted hover:text-fg' %}
+{% set disabled = 'inline-flex h-9 items-center justify-center rounded-md px-3 text-sm font-medium text-fg-subtle cursor-not-allowed' %}
 
 {% block content %}
-    <div x-data="applicationsList('{{ path('backoffice_enrichment_states') }}')">
+    <div x-data="applicationsList"
+         data-api-url="{{ path('api_applications') }}"
+         data-detail-url="{{ path('backoffice_application', {id: '00000000-0000-4000-8000-000000000000'})|replace({'00000000-0000-4000-8000-000000000000': '__id__'}) }}">
         <h1 class="mb-6 text-2xl font-semibold tracking-tight sm:text-3xl">Applications</h1>
 
-        {# Filters: a GET form that also works without JavaScript #}
+        <noscript>
+            <twig:Alert tone="warning" title="JavaScript is needed" class="mb-6">The applications list loads in the browser.</twig:Alert>
+        </noscript>
+
+        {# Filters: read by the component, never submitted #}
         {{ form_start(filters, {attr: {
             'x-ref': 'filters',
-            '@input.debounce.300ms': 'refresh()',
-            '@submit.prevent': 'refresh()',
+            '@input': 'onInput($event)',
+            '@submit.prevent': 'applyFilters()',
             class: 'mb-6 rounded-xl border border-line bg-surface p-4 shadow-xs',
             'aria-label': 'Filters',
             role: 'search',
@@ -52,8 +64,6 @@
                         <svg class="size-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M3 5a1 1 0 0 1 1-1h12a1 1 0 0 1 .8 1.6L12 12v4a1 1 0 0 1-1.45.9l-2-1A1 1 0 0 1 8 15v-3L3.2 5.6A1 1 0 0 1 3 5Z"/></svg>
                         Filters
                     </button>
-                    {# Without JavaScript, filters apply on submit #}
-                    <noscript><button type="submit" class="h-10 rounded-md bg-accent px-4 text-sm font-medium text-fg-on-accent">Filter</button></noscript>
                 </div>
 
                 <div class="mt-4 gap-4 md:grid md:grid-cols-[repeat(3,minmax(0,1fr))_8rem_minmax(0,1.6fr)]"
@@ -76,77 +86,173 @@
             </div>
         {{ form_end(filters, {render_rest: false}) }}
 
-        {{ block('results') }}
-    </div>
-{% endblock %}
+        {# Invalid filters (422): the last results stay below #}
+        <twig:Alert tone="danger" title="Some filters are not valid" class="mb-6" x-show="errorList.length > 0" x-cloak>
+            <ul class="grid gap-0.5">
+                <template x-for="[label, message] in errorList" :key="label">
+                    <li><span class="font-medium text-fg" x-text="label"></span>: <span x-text="message"></span></li>
+                </template>
+            </ul>
+        </twig:Alert>
 
-{% block results %}
-<div id="results">
-    <div class="mb-3 flex items-center justify-between gap-4">
-        <p class="text-sm text-fg-muted" role="status">
-            <span class="font-medium text-fg tabular-nums">{{ page.total }}</span> {{ page.total == 1 ? 'application' : 'applications' }}
-        </p>
-        {% if hasFilters %}
-            <a href="{{ path('backoffice_applications') }}" class="text-sm font-medium no-underline">Clear filters</a>
-        {% endif %}
-    </div>
+        <div id="results" x-ref="results" class="scroll-mt-6">
+            <div class="mb-3 flex items-center justify-between gap-4">
+                <p class="text-sm text-fg-muted" role="status">
+                    <template x-if="pagination">
+                        <span><span class="font-medium text-fg tabular-nums" x-text="pagination.total"></span> <span x-text="pagination.total === 1 ? 'application' : 'applications'"></span></span>
+                    </template>
+                    <template x-if="!pagination"><span class="inline-block h-4 w-28 animate-pulse rounded bg-surface-muted align-middle"></span></template>
+                </p>
+                <div class="flex items-center gap-3">
+                    <button type="button" class="cursor-pointer text-sm font-medium text-accent hover:text-accent-hover" x-show="hasFilters" x-cloak @click="clearFilters()">Clear filters</button>
 
-    {% if page.items is empty %}
-        <div class="rounded-xl border border-dashed border-line-strong bg-surface px-6 py-16 text-center">
-            {% if hasFilters %}
-                <p class="font-medium">No applications match these filters.</p>
-                <a href="{{ path('backoffice_applications') }}" class="mt-2 inline-block text-sm font-medium no-underline">Clear filters</a>
-            {% else %}
-                <p class="font-medium">No applications yet.</p>
-                <p class="mt-1 text-sm text-fg-muted">They will show up here as soon as candidates apply.</p>
-            {% endif %}
-        </div>
-    {% else %}
-        {# Table, from md up #}
-        <div class="hidden overflow-hidden rounded-xl border border-line bg-surface shadow-xs md:block">
-            <table class="w-full text-left text-sm">
-                <thead class="border-b border-line bg-surface-muted/60 text-xs font-medium tracking-wide text-fg-muted uppercase">
-                    <tr>
-                        <th scope="col" class="px-4 py-3 font-medium">Status</th>
-                        <th scope="col" class="px-4 py-3 font-medium">Position</th>
-                        <th scope="col" class="px-4 py-3 font-medium">Applicant</th>
-                        <th scope="col" class="px-4 py-3 font-medium">Score</th>
-                        <th scope="col" class="px-4 py-3 text-right font-medium">Applied</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-line">
-                    {% for application in page.items %}
-                        <tr class="relative transition-colors hover:bg-surface-muted/60" data-application="{{ application.id }}" data-enrichment="{{ application.enrichmentStatus }}">
-                            <td class="px-4 py-3"><twig:StatusBadge status="{{ application.status }}" /></td>
-                            <td class="px-4 py-3 text-fg-muted">{{ application.position.title ?? '—' }}</td>
-                            <td class="px-4 py-3"><a href="{{ path('backoffice_application', {id: application.id}|merge(query)) }}" class="font-medium text-fg no-underline after:absolute after:inset-0 hover:text-accent">{{ application.fullName }}</a></td>
-                            <td class="px-4 py-3">{{ _self.score(application) }}</td>
-                            <td class="px-4 py-3 text-right whitespace-nowrap text-fg-muted">{{ _self.applied(application) }}</td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-
-        {# Cards, below md #}
-        <ul class="grid gap-3 md:hidden">
-            {% for application in page.items %}
-                <li class="relative rounded-xl border border-line bg-surface p-4 shadow-xs">
-                    <div class="flex items-start justify-between gap-3">
-                        <a href="{{ path('backoffice_application', {id: application.id}|merge(query)) }}" class="font-medium text-fg no-underline after:absolute after:inset-0">{{ application.fullName }}</a>
-                        {{ _self.score(application) }}
+                    {# Auto-refresh toggle, with a tooltip on hover and focus #}
+                    <div class="relative" x-data="{ tip: false }" @mouseenter="tip = true" @mouseleave="tip = false">
+                        <button type="button" aria-label="Auto-refresh" aria-describedby="refresh-tooltip"
+                                x-bind:aria-pressed="autoRefresh"
+                                @click="toggleAutoRefresh()" @focus="tip = true" @blur="tip = false"
+                                class="inline-flex size-9 cursor-pointer items-center justify-center rounded-md border transition-colors"
+                                x-bind:class="autoRefresh ? 'border-accent/30 bg-accent-soft text-accent' : 'border-line-strong bg-surface text-fg-subtle hover:text-fg'">
+                            <svg class="size-4" x-bind:class="loading ? 'animate-spin' : ''" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                <path fill-rule="evenodd" d="M15.312 11.424a5.5 5.5 0 0 1-9.201 2.466l-.312-.311h2.433a.75.75 0 0 0 0-1.5H3.989a.75.75 0 0 0-.75.75v4.242a.75.75 0 0 0 1.5 0v-2.43l.31.31a7 7 0 0 0 11.712-3.138.75.75 0 0 0-1.449-.39Zm1.23-3.723a.75.75 0 0 0 .219-.53V2.929a.75.75 0 0 0-1.5 0V5.36l-.31-.31A7 7 0 0 0 3.239 8.188a.75.75 0 1 0 1.448.389A5.5 5.5 0 0 1 13.89 6.11l.311.31h-2.432a.75.75 0 0 0 0 1.5h4.243a.75.75 0 0 0 .53-.219Z" clip-rule="evenodd"/>
+                            </svg>
+                            <span class="absolute -top-0.5 -right-0.5 size-2 rounded-full bg-danger ring-2 ring-surface" x-show="failed" x-cloak aria-hidden="true"></span>
+                        </button>
+                        <div id="refresh-tooltip" role="tooltip" x-show="tip" x-cloak x-transition.opacity
+                             class="absolute top-full right-0 z-20 mt-2 w-max max-w-64 rounded-md bg-fg px-3 py-2 text-xs text-surface shadow-lg">
+                            <p class="font-medium" x-text="refreshLabel" x-bind:class="failed && !loading ? 'text-danger-soft' : ''"></p>
+                            <p class="mt-0.5 opacity-75" x-text="refreshHint"></p>
+                        </div>
                     </div>
-                    <p class="mt-1 text-sm text-fg-muted">{{ application.position.title ?? '—' }}</p>
-                    <div class="mt-3 flex items-center justify-between">
-                        <twig:StatusBadge status="{{ application.status }}" />
-                        <span class="text-sm text-fg-subtle">{{ _self.applied(application) }}</span>
-                    </div>
-                </li>
-            {% endfor %}
-        </ul>
+                </div>
+            </div>
 
-        <twig:Pagination :page="page.page" :pages="page.pages" :total="page.total" :perPage="page.perPage"
-                         route="backoffice_applications" :query="query" class="mt-6" />
-    {% endif %}
-</div>
+            {# First load #}
+            <template x-if="items === null && !failed">
+                <div class="overflow-hidden rounded-xl border border-line bg-surface shadow-xs" aria-busy="true" aria-label="Loading applications">
+                    <template x-for="i in 5" :key="i">
+                        <div class="flex items-center gap-6 border-b border-line px-4 py-4 last:border-b-0">
+                            <span class="h-5 w-20 animate-pulse rounded-full bg-surface-muted"></span>
+                            <span class="h-4 flex-1 animate-pulse rounded bg-surface-muted"></span>
+                            <span class="h-4 w-32 animate-pulse rounded bg-surface-muted"></span>
+                            <span class="h-5 w-10 animate-pulse rounded-full bg-surface-muted"></span>
+                            <span class="hidden h-4 w-16 animate-pulse rounded bg-surface-muted sm:block"></span>
+                        </div>
+                    </template>
+                </div>
+            </template>
+
+            {# First load failed #}
+            <template x-if="items === null && failed">
+                <div class="rounded-xl border border-dashed border-line-strong bg-surface px-6 py-16 text-center">
+                    <p class="font-medium">The applications could not be loaded.</p>
+                    <button type="button" class="mt-2 cursor-pointer text-sm font-medium text-accent hover:text-accent-hover" @click="load()">Try again</button>
+                </div>
+            </template>
+
+            {# Empty states #}
+            <template x-if="items !== null && items.length === 0 && errorList.length === 0">
+                <div class="rounded-xl border border-dashed border-line-strong bg-surface px-6 py-16 text-center">
+                    <template x-if="hasFilters">
+                        <div>
+                            <p class="font-medium">No applications match these filters.</p>
+                            <button type="button" class="mt-2 cursor-pointer text-sm font-medium text-accent hover:text-accent-hover" @click="clearFilters()">Clear filters</button>
+                        </div>
+                    </template>
+                    <template x-if="!hasFilters">
+                        <div>
+                            <p class="font-medium">No applications yet.</p>
+                            <p class="mt-1 text-sm text-fg-muted">They will show up here as soon as candidates apply.</p>
+                        </div>
+                    </template>
+                </div>
+            </template>
+
+            <template x-if="items !== null && items.length > 0">
+                <div>
+                    {# Table, from md up #}
+                    <div class="hidden overflow-hidden rounded-xl border border-line bg-surface shadow-xs md:block">
+                        <table class="w-full text-left text-sm">
+                            <thead class="border-b border-line bg-surface-muted/60 text-xs font-medium tracking-wide text-fg-muted uppercase">
+                                <tr>
+                                    <th scope="col" class="px-4 py-3 font-medium">Status</th>
+                                    <th scope="col" class="px-4 py-3 font-medium">Position</th>
+                                    <th scope="col" class="px-4 py-3 font-medium">Applicant</th>
+                                    <th scope="col" class="px-4 py-3 font-medium">Score</th>
+                                    <th scope="col" class="px-4 py-3 text-right font-medium">Applied</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-line">
+                                <template x-for="item in items" :key="item.id">
+                                    <tr class="relative transition-colors hover:bg-surface-muted/60" x-bind:data-application="item.id" x-bind:data-enrichment="item.enrichment.status">
+                                        <td class="px-4 py-3"><span x-bind:class="statusBadge(item.status).class" x-text="statusBadge(item.status).label"></span></td>
+                                        <td class="px-4 py-3 text-fg-muted" x-text="item.position?.title ?? '—'"></td>
+                                        <td class="px-4 py-3"><a x-bind:href="detailHref(item)" class="font-medium text-fg no-underline after:absolute after:inset-0 hover:text-accent" x-text="fullName(item)"></a></td>
+                                        <td class="px-4 py-3">{{ _self.score() }}</td>
+                                        <td class="px-4 py-3 text-right whitespace-nowrap text-fg-muted">{{ _self.applied() }}</td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {# Cards, below md #}
+                    <ul class="grid gap-3 md:hidden">
+                        <template x-for="item in items" :key="item.id">
+                            <li class="relative rounded-xl border border-line bg-surface p-4 shadow-xs">
+                                <div class="flex items-start justify-between gap-3">
+                                    <a x-bind:href="detailHref(item)" class="font-medium text-fg no-underline after:absolute after:inset-0" x-text="fullName(item)"></a>
+                                    {{ _self.score() }}
+                                </div>
+                                <p class="mt-1 text-sm text-fg-muted" x-text="item.position?.title ?? '—'"></p>
+                                <div class="mt-3 flex items-center justify-between">
+                                    <span x-bind:class="statusBadge(item.status).class" x-text="statusBadge(item.status).label"></span>
+                                    <span class="text-sm text-fg-subtle">{{ _self.applied() }}</span>
+                                </div>
+                            </li>
+                        </template>
+                    </ul>
+
+                    {# Pagination, as the Pagination component #}
+                    <nav aria-label="Pagination" class="mt-6 flex flex-col items-center justify-between gap-3 sm:flex-row">
+                        <p class="text-sm text-fg-muted">
+                            Showing <span class="font-medium text-fg tabular-nums" x-text="`${showingFrom}–${showingTo}`"></span>
+                            of <span class="font-medium text-fg tabular-nums" x-text="pagination.total"></span>
+                        </p>
+                        <ul class="flex items-center gap-1">
+                            <li>
+                                <template x-if="pagination.page > 1">
+                                    <a x-bind:href="pageHref(pagination.page - 1)" @click.prevent="goTo(pagination.page - 1)" class="{{ link }}" rel="prev">‹ Prev</a>
+                                </template>
+                                <template x-if="pagination.page <= 1">
+                                    <span class="{{ disabled }}" aria-disabled="true">‹ Prev</span>
+                                </template>
+                            </li>
+                            <template x-for="p in shownPages" :key="p.number">
+                                <li class="contents">
+                                    <span class="hidden px-1 text-sm text-fg-subtle sm:block" aria-hidden="true" x-show="p.gapBefore">…</span>
+                                    <span x-bind:class="p.number === pagination.page ? '' : 'hidden sm:block'">
+                                        <template x-if="p.number === pagination.page">
+                                            <span class="{{ link }} bg-accent text-fg-on-accent hover:bg-accent hover:text-fg-on-accent" aria-current="page" x-text="p.number"></span>
+                                        </template>
+                                        <template x-if="p.number !== pagination.page">
+                                            <a x-bind:href="pageHref(p.number)" @click.prevent="goTo(p.number)" class="{{ link }}" x-text="p.number"></a>
+                                        </template>
+                                    </span>
+                                </li>
+                            </template>
+                            <li>
+                                <template x-if="pagination.page < pagination.pages">
+                                    <a x-bind:href="pageHref(pagination.page + 1)" @click.prevent="goTo(pagination.page + 1)" class="{{ link }}" rel="next">Next ›</a>
+                                </template>
+                                <template x-if="pagination.page >= pagination.pages">
+                                    <span class="{{ disabled }}" aria-disabled="true">Next ›</span>
+                                </template>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            </template>
+        </div>
+    </div>
 {% endblock %}

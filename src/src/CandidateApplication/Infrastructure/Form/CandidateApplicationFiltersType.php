@@ -12,11 +12,11 @@ use Symfony\Component\Form\Extension\Core\Type\IntegerType;
 use Symfony\Component\Form\Extension\Core\Type\SearchType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
-use Symfony\Component\Validator\Constraints as Assert;
 
 /**
- * The list's search and filters, as a GET form with unprefixed names so the URL reads
- * ?q=jane&status=received&page=2. Every field is optional.
+ * The list's search and filters. Only rendered, never submitted: the browser reads the fields and
+ * queries GET /api/applications with the same, unprefixed names (?q=jane&status=received&page=2),
+ * and the API validates them (Controller\Api\ListCandidateApplicationsRequest).
  */
 final class CandidateApplicationFiltersType extends AbstractType
 {
@@ -28,8 +28,7 @@ final class CandidateApplicationFiltersType extends AbstractType
         $builder
             ->add('q', SearchType::class, [
                 'label' => 'Search',
-                'attr' => ['placeholder' => 'Search name, surname or email…'],
-                'constraints' => [new Assert\Length(max: 200)],
+                'attr' => ['placeholder' => 'Search name, surname or email…', 'maxlength' => 200],
             ])
             ->add('position', ChoiceType::class, [
                 'label' => 'Position',
@@ -52,7 +51,6 @@ final class CandidateApplicationFiltersType extends AbstractType
             ->add('minScore', IntegerType::class, [
                 'label' => 'Min score',
                 'attr' => ['min' => 0, 'max' => 100],
-                'constraints' => [new Assert\Range(min: 0, max: 100)],
             ])
             ->add('from', DateType::class, [
                 'label' => 'Applied from',
@@ -72,8 +70,6 @@ final class CandidateApplicationFiltersType extends AbstractType
             'method' => 'GET',
             'csrf_protection' => false,
             'required' => false,
-            // The page number travels in the same query string.
-            'allow_extra_fields' => true,
             'positions' => [],
         ]);
         $resolver->setAllowedTypes('positions', 'array');

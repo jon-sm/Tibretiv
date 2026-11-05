@@ -21,60 +21,31 @@ final class CandidateApplicationsControllerTest extends DatabaseTestCase
         $this->seedPositions();
     }
 
-    public function testTheListShowsApplicationsNewestFirst(): void
+    public function testTheListPageIsAShellForTheApi(): void
     {
-        $this->submit(email: 'old@acme.com', name: 'Old');
-        $this->clock()->modify('+1 hour');
-        $this->submit(email: 'new@acme.com', name: 'New');
+        $this->submit();
 
+        $crawler = $this->client->request('GET', '/backoffice?status=received');
+
+        self::assertResponseIsSuccessful();
+        $component = $crawler->filter('[x-data="applicationsList"]');
+        self::assertCount(1, $component);
+        self::assertSame('/api/applications', $component->attr('data-api-url'));
+        self::assertSame('/backoffice/__id__', $component->attr('data-detail-url'));
+        // Rows come from the API, not from the page
+        self::assertSelectorNotExists('tbody > tr');
+        self::assertStringNotContainsString('Jane', (string) $this->client->getResponse()->getContent());
+    }
+
+    public function testTheFiltersOfferTheOpenAndClosedPositions(): void
+    {
         $crawler = $this->client->request('GET', '/backoffice');
 
-        self::assertResponseIsSuccessful();
-        self::assertSame(['New Doe', 'Old Doe'], $crawler->filter('tbody tr td:nth-child(3)')->each(static fn ($td): string => $td->text()));
-        self::assertSelectorTextContains('#results', '2 applications');
-        self::assertSelectorTextContains('tbody', 'Analysing…');
-    }
-
-    public function testFiltersComeFromTheQueryString(): void
-    {
-        $this->submit(email: 'jane@acme.com', name: 'Jane');
-        $this->submit(email: 'luis@acme.com', name: 'Luis', positionId: self::OTHER_POSITION);
-
-        $crawler = $this->client->request('GET', '/backoffice?q=LUIS&position='.self::OTHER_POSITION.'&status=received&enrichment=pending&page=1');
-
-        self::assertSame(['Luis Doe'], $crawler->filter('tbody tr td:nth-child(3)')->each(static fn ($td): string => $td->text()));
-        self::assertSelectorExists('a:contains("Clear filters")');
-    }
-
-    public function testInvalidFiltersAreIgnored(): void
-    {
-        $this->submit();
-
-        $crawler = $this->client->request('GET', '/backoffice?status=bogus&minScore=500&from=yesterday');
-
-        self::assertResponseIsSuccessful();
-        self::assertCount(1, $crawler->filter('tbody tr'));
-    }
-
-    public function testNoResultsState(): void
-    {
-        $this->submit();
-
-        $this->client->request('GET', '/backoffice?q=nobody');
-
-        self::assertSelectorTextContains('#results', 'No applications match these filters.');
-    }
-
-    public function testAnAjaxRequestGetsOnlyTheResults(): void
-    {
-        $this->submit();
-
-        $this->client->xmlHttpRequest('GET', '/backoffice');
-
-        self::assertResponseIsSuccessful();
-        $html = (string) $this->client->getResponse()->getContent();
-        self::assertStringStartsWith('<div id="results">', trim($html));
-        self::assertStringNotContainsString('<html', $html);
+        $positions = $crawler->filter('select[name="position"] option')->each(static fn ($option): string => $option->text());
+        self::assertEqualsCanonicalizing(['All positions', 'Senior Backend Engineer', 'Product Designer', 'QA Engineer'], $positions);
+        foreach (['q', 'status', 'enrichment', 'minScore', 'from', 'to'] as $name) {
+            self::assertSelectorExists("form[role=search] [name=\"$name\"]");
+        }
     }
 
     public function testTheDetailShowsTheApplication(): void

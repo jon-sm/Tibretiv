@@ -7,8 +7,6 @@ namespace App\CandidateApplication\Infrastructure\Controller;
 use App\CandidateApplication\Application\ChangeCandidateApplicationStatus\ChangeCandidateApplicationStatus;
 use App\CandidateApplication\Application\GetCandidateApplication\GetCandidateApplication;
 use App\CandidateApplication\Application\GetEnrichmentStates\GetEnrichmentStates;
-use App\CandidateApplication\Application\ListCandidateApplications\ListCandidateApplications;
-use App\CandidateApplication\Application\Read\CandidateApplicationsPage;
 use App\CandidateApplication\Application\Read\CandidateApplicationView;
 use App\CandidateApplication\Application\Read\EnrichmentState;
 use App\CandidateApplication\Domain\CandidateApplicationNotFound;
@@ -34,9 +32,6 @@ final class CandidateApplicationsController extends AbstractController
 {
     public const string STATUS_UPDATED_FLASH = 'success';
 
-    /** URL value of the enrichment filter => stored enrichment status */
-    private const array ENRICHMENT_FILTER = ['processed' => 'completed', 'pending' => 'pending', 'failed' => 'failed'];
-
     public function __construct(
         private readonly CommandBus $commands,
         private readonly QueryBus $queries,
@@ -45,19 +40,15 @@ final class CandidateApplicationsController extends AbstractController
     }
 
     /**
-     * Template variables:
-     *  - page: CandidateApplicationsPage (items: list<CandidateApplicationView> with position, total, page, pages, perPage,
-     *    hasPendingEnrichment() to decide whether to poll)
-     *  - filters: FormView of CandidateApplicationFiltersType (GET, unprefixed names: q, position, status,
-     *    enrichment, minScore, from, to)
-     *  - hasFilters: bool, whether to show "Clear filters"
-     *  - query: array<string, string>, the current filters without the page, to build page links
+     * The page shell: the rows are loaded in the browser from api_applications.
      *
-     * An XMLHttpRequest (X-Requested-With header) gets only the template's "results" block, so the
-     * table can be refreshed without reloading the page. Invalid filter values are ignored.
+     * Template variables:
+     *  - filters: FormView of CandidateApplicationFiltersType (unprefixed names: q, position, status,
+     *    enrichment, minScore, from, to). Rendered empty: the browser fills it from the URL, and the API
+     *    validates the values
      */
     #[Route('', name: 'backoffice_applications', methods: ['GET'])]
-    public function list(Request $request, #[MapQueryParameter] int $page = 1): Response
+    public function list(): Response
     {
         $positions = $this->queries->ask(new ListJobPositions());
         \assert(\is_array($positions));
@@ -65,38 +56,10 @@ final class CandidateApplicationsController extends AbstractController
         $filters = $this->forms->createNamed('', CandidateApplicationFiltersType::class, null, [
             'positions' => array_column(array_map(static fn (JobPositionView $p): array => ['title' => $p->title, 'id' => $p->id], $positions), 'id', 'title'),
         ]);
-        $filters->handleRequest($request);
-        $values = self::validValues($filters);
 
-        $result = $this->queries->ask(new ListCandidateApplications(
-            search: $values['q'] ?? null,
-            positionId: $values['position'] ?? null,
-            status: $values['status'] ?? null,
-            enrichmentStatus: self::ENRICHMENT_FILTER[$values['enrichment'] ?? ''] ?? null,
-            minScore: $values['minScore'] ?? null,
-            appliedFrom: $values['from'] ?? null,
-            appliedTo: $values['to'] ?? null,
-            page: max(1, $page),
-        ));
-        \assert($result instanceof CandidateApplicationsPage);
-
-        $query = array_filter(
-            array_intersect_key($request->query->all(), $filters->all()),
-            static fn (mixed $value): bool => \is_string($value) && '' !== $value,
-        );
-
-        $parameters = [
-            'page' => $result,
+        return $this->render('candidate_application/backoffice/applications/list.html.twig', [
             'filters' => $filters->createView(),
-            'hasFilters' => [] !== $values,
-            'query' => $query,
-        ];
-
-        $template = 'candidate_application/backoffice/applications/list.html.twig';
-
-        return $request->isXmlHttpRequest()
-            ? $this->renderBlock($template, 'results', $parameters)
-            : $this->render($template, $parameters);
+        ]);
     }
 
     /**
@@ -162,7 +125,7 @@ final class CandidateApplicationsController extends AbstractController
     }
 
     /**
-     * Polling: GET ?ids[]=…&ids[]=… answers
+     * Polling from the detail page: GET ?ids[]=…&ids[]=… answers
      * [{"id", "status": "pending|completed|failed", "score", "summary", "enrichedAt": ISO 8601|null}].
      *
      * @param array<mixed> $ids
@@ -200,29 +163,6 @@ final class CandidateApplicationsController extends AbstractController
         return $this->createForm(ChangeStatusType::class, ['status' => CandidateApplicationStatus::from($application->status)], [
             'action' => $this->generateUrl('backoffice_application_status', ['id' => $application->id] + self::stringQuery($request)),
         ]);
-    }
-
-    /**
-     * The filters that were submitted and are valid; invalid ones are ignored.
-     *
-     * @return array<string, mixed>
-     */
-    private static function validValues(FormInterface $filters): array
-    {
-        if (!$filters->isSubmitted()) {
-            return [];
-        }
-
-        $values = [];
-        foreach ($filters->all() as $name => $field) {
-            $value = $field->getData();
-
-            if ($field->isValid() && null !== $value && '' !== $value) {
-                $values[$name] = $value;
-            }
-        }
-
-        return $values;
     }
 
     /** @return array<string, string> */

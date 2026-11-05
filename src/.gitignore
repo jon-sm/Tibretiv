@@ -1,4 +1,7 @@
 
+# Production only, written on the host. Dev and test use the committed .env.dist.
+/.env
+
 ###> symfony/framework-bundle ###
 /.env.local
 /.env.local.php
