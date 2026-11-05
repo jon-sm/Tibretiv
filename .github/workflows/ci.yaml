@@ -4,7 +4,7 @@ name: CI
 on:
   push:
     branches:
-      - main
+      - master
   pull_request: ~
   workflow_dispatch: ~
 
@@ -65,3 +65,7 @@ jobs:
           VALIDATE_BIOME_FORMAT: false
           VALIDATE_BIOME_LINT: false
           VALIDATE_PYTHON_BLACK: false
+          # These need composer install, and the linter image has no ext-mongodb or ext-xml.
+          # PHPStan runs in the Tests job, with the app image.
+          VALIDATE_PHP_PHPSTAN: false
+          VALIDATE_PHP_PSALM: false
